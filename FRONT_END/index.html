@@ -1,0 +1,157 @@
+<!-- FRONT_END/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aegis & Anarchy - Tactical HUD</title>
+    <!-- Google Fonts for cyberpunk/tech feel -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div id="app">
+        <!-- Header / HUD Top Bar -->
+        <header class="hud-header">
+            <div class="logo">
+                <h1>⚡ AEGIS & ANARCHY</h1>
+                <span class="subtitle">TACTICAL LOADOUT SYSTEM v2.1</span>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator">
+                    <span class="dot online"></span>
+                    <span id="connectionStatus">CONNECTED</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="hud-main">
+            <!-- Left Panel: Combatant Profile & Telemetry -->
+            <div class="panel left-panel">
+                <!-- Combatant Profile -->
+                <div class="profile-card" id="profileCard">
+                    <div class="profile-header">
+                        <h2 id="combatantName">VANTABLACK</h2>
+                        <span class="faction-tag hero" id="factionTag">HERO</span>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <span class="stat-label">Bio Capacity</span>
+                            <span class="stat-value" id="bioCapacity">1400</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Recovery</span>
+                            <span class="stat-value" id="recoveryRate">3</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Risk</span>
+                            <span class="stat-value" id="riskLevel">12</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Credits</span>
+                            <span class="stat-value" id="credits">8200</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telemetry Bar -->
+                <div class="telemetry-container">
+                    <h3>BIO-TELEMETRY</h3>
+                    <div class="telemetry-bar" id="telemetryBar">
+                        <div class="telemetry-fill" id="telemetryFill" style="width: 65%"></div>
+                    </div>
+                    <div class="telemetry-details">
+                        <span id="telemetryLabel">Bio Energy: 65%</span>
+                        <span id="telemetryWarnings">⚠️ WARNING: Elevated burnout risk</span>
+                    </div>
+                </div>
+
+                <!-- Burnout Risk Gauge -->
+                <div class="burnout-gauge-container">
+                    <h3>BURNOUT RISK</h3>
+                    <div class="gauge" id="burnoutGauge">
+                        <div class="gauge-fill" id="burnoutFill" style="width: 35%"></div>
+                        <span class="gauge-label" id="burnoutLabel">35%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Loadout Builder -->
+            <div class="panel center-panel">
+                <div class="loadout-builder">
+                    <h2>⚙️ LOADOUT CUSTOMIZER</h2>
+                    <div class="loadout-slots" id="loadoutSlots">
+                        <!-- 5 slots: helmet, core, dampener, gauntlets, battery -->
+                        <div class="slot" data-slot="helmet">
+                            <span class="slot-label">HELMET</span>
+                            <div class="slot-content" id="slot-helmet">
+                                <span class="empty-slot">Empty</span>
+                            </div>
+                        </div>
+                        <div class="slot" data-slot="core">
+                            <span class="slot-label">CORE</span>
+                            <div class="slot-content" id="slot-core">
+                                <span class="empty-slot">Empty</span>
+                            </div>
+                        </div>
+                        <div class="slot" data-slot="dampener">
+                            <span class="slot-label">DAMPENER</span>
+                            <div class="slot-content" id="slot-dampener">
+                                <span class="empty-slot">Empty</span>
+                            </div>
+                        </div>
+                        <div class="slot" data-slot="gauntlets">
+                            <span class="slot-label">GAUNTLETS</span>
+                            <div class="slot-content" id="slot-gauntlets">
+                                <span class="empty-slot">Empty</span>
+                            </div>
+                        </div>
+                        <div class="slot" data-slot="battery">
+                            <span class="slot-label">BATTERY</span>
+                            <div class="slot-content" id="slot-battery">
+                                <span class="empty-slot">Empty</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="loadout-actions">
+                        <button id="validateLoadoutBtn" class="btn btn-primary">🔍 VALIDATE LOADOUT</button>
+                        <button id="equipLoadoutBtn" class="btn btn-success">✅ EQUIP LOADOUT</button>
+                        <button id="clearLoadoutBtn" class="btn btn-danger">🗑️ CLEAR ALL</button>
+                    </div>
+                    <div id="validationResult" class="validation-result"></div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Marketplace / Armory -->
+            <div class="panel right-panel">
+                <div class="marketplace">
+                    <h2>🏪 MARKETPLACE</h2>
+                    <div class="marketplace-tabs">
+                        <button class="tab-btn active" data-tab="armory">ARMORY</button>
+                        <button class="tab-btn" data-tab="black-market">BLACK MARKET</button>
+                        <button class="tab-btn" data-tab="inventory">INVENTORY</button>
+                    </div>
+                    <div class="marketplace-content" id="marketplaceContent">
+                        <!-- Dynamic content -->
+                        <div class="loading-spinner">Loading gear...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="hud-footer">
+            <span>⚡ Aegis & Anarchy v1.0 | Powered by Neural Bio-Energy Engine</span>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>
