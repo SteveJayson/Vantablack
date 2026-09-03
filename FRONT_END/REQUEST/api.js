@@ -44,6 +44,58 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 };
 
+// Health check for backend availability
+export const checkBackendHealth = async (timeoutMs = 3000) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const startTime = performance.now();
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    clearTimeout(timeoutId);
+
+    const latency = Math.round(performance.now() - startTime);
+
+    if (response.ok) {
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = { message: 'OK' };
+      }
+      return {
+        online: true,
+        latency,
+        url: API_BASE_URL,
+        message: data.message || 'API connected',
+        data: data.data || data,
+      };
+    }
+
+    return {
+      online: false,
+      latency,
+      url: API_BASE_URL,
+      error: `HTTP ${response.status}: ${response.statusText || 'Error'}`,
+    };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const latency = Math.round(performance.now() - startTime);
+    return {
+      online: false,
+      latency,
+      url: API_BASE_URL,
+      error: err.name === 'AbortError' ? 'Connection timed out (3s)' : (err.message || 'Server unreachable'),
+    };
+  }
+};
+
 // ============================================
 // API ENDPOINTS
 // ============================================

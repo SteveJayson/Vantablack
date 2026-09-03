@@ -92,6 +92,90 @@ body {
     box-shadow: 0 0 10px var(--success-color);
 }
 
+.dot.offline {
+    background: var(--danger-color);
+    box-shadow: 0 0 10px var(--danger-color);
+    animation: blink-dot 1.2s infinite ease-in-out;
+}
+
+.dot.checking {
+    background: var(--warning-color);
+    box-shadow: 0 0 10px var(--warning-color);
+    animation: blink-dot 0.8s infinite ease-in-out;
+}
+
+@keyframes blink-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.retry-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    border-radius: 4px;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    transition: all 0.2s;
+}
+
+.retry-btn:hover {
+    background: rgba(0, 240, 255, 0.15);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+.retry-btn.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.backend-banner {
+    background: rgba(255, 0, 68, 0.15);
+    border: 1px solid rgba(255, 0, 68, 0.5);
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 15px rgba(255, 0, 68, 0.2);
+    transition: all 0.3s ease;
+}
+
+.backend-banner.hidden {
+    display: none;
+}
+
+.backend-banner .banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: #ffd0d8;
+}
+
+.banner-btn {
+    background: rgba(0, 240, 255, 0.15);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 5px 12px;
+    font-family: var(--font-header);
+    font-size: 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.banner-btn:hover {
+    background: var(--primary-color);
+    color: var(--bg-dark);
+    box-shadow: 0 0 10px var(--primary-color);
+}
+
 /* ============================================
    MAIN LAYOUT
 ============================================ */

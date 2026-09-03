@@ -14,6 +14,9 @@ export default function HudTelemetry({
   recoveryRate,
   credits,
   burnoutRisk,
+  backendStatus,
+  onRetryBackend,
+  isCheckingBackend,
 }) {
   const riskTier =
     burnoutRisk >= 75 ? "crimson" : burnoutRisk >= 40 ? "amber" : "cyan";
@@ -45,9 +48,31 @@ export default function HudTelemetry({
             <p className="font-display text-lg font-semibold leading-none tracking-wide text-slate-50">
               {combatantName}
             </p>
-            <p className="mt-1 font-data text-[11px] text-slate-500">
-              Combatant Link // Active
-            </p>
+            <div className="mt-1 flex items-center gap-2 font-data text-[11px]">
+              <span className="text-slate-500">Combatant Link // Active</span>
+              <span className="text-slate-700">|</span>
+              {backendStatus?.online ? (
+                <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold" title={`Connected to ${backendStatus.url}`}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  API ONLINE ({backendStatus.latency}ms)
+                </span>
+              ) : backendStatus?.online === false ? (
+                <button
+                  onClick={onRetryBackend}
+                  disabled={isCheckingBackend}
+                  className="inline-flex items-center gap-1 text-crimson hover:underline cursor-pointer font-semibold"
+                  title="Backend unreachable. Click to retry connection."
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-crimson animate-ping" />
+                  API OFFLINE ⚠️
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-amber">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber animate-pulse" />
+                  CHECKING API...
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

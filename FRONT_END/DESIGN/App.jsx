@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { WifiOff } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import HudTelemetry from "./components/HudTelemetry.jsx";
 import EnergyGauge from "./components/EnergyGauge.jsx";
 import GearCustomizer from "./components/GearCustomizer.jsx";
 import ArmoryCatalog from "./components/ArmoryCatalog.jsx";
-import { getCombatant, getGearCatalog, validateLoadout, purchaseGear } from "../REQUEST/api.js";
+import BackendStatusBanner from "./components/BackendStatusBanner.jsx";
+import {
+  getCombatant,
+  getGearCatalog,
+  validateLoadout,
+  purchaseGear,
+  checkBackendHealth,
+  getApiBaseUrl
+} from "../REQUEST/api.js";
 
 const COMBATANT_ID = "demo-001";
 
@@ -41,38 +48,88 @@ export default function App() {
   const [inventory, setInventory] = useState([]);
   const [loadout, setLoadout] = useState(EMPTY_LOADOUT);
   const [credits, setCredits] = useState(FALLBACK_COMBATANT.credits);
-  const [offline, setOffline] = useState(false);
   const [purchasingId, setPurchasingId] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Load combatant + catalog from the backend on mount, falling back to
-  // local demo data if the PHP API isn't reachable.
-  useEffect(() => {
-    let cancelled = false;
+  // Backend Health Telemetry State
+  const [backendStatus, setBackendStatus] = useState({
+    online: null, // null = checking initially
+    latency: null,
+    url: getApiBaseUrl(),
+    message: null,
+    error: null,
+    data: null,
+    lastChecked: null,
+  });
+  const [isCheckingBackend, setIsCheckingBackend] = useState(false);
+  const prevOnlineRef = useRef(null);
 
-    async function bootstrap() {
-      try {
-        const [combatantRes, catalogRes] = await Promise.all([
-          getCombatant(COMBATANT_ID),
-          getGearCatalog(),
-        ]);
-        if (cancelled) return;
-        setCombatant(combatantRes.combatant ?? combatantRes);
-        setCatalog(catalogRes.catalog ?? catalogRes);
-        setCredits((combatantRes.combatant ?? combatantRes).credits);
-        setOffline(false);
-      } catch (err) {
-        if (cancelled) return;
-        // Expected when running this frontend without the PHP backend up.
-        setOffline(true);
+  // Verify backend health and sync real data if online
+  const verifyBackend = useCallback(async (isManualRetry = false) => {
+    setIsCheckingBackend(true);
+    try {
+      const health = await checkBackendHealth(3000);
+      setBackendStatus({
+        online: health.online,
+        latency: health.latency ?? null,
+        url: health.url,
+        message: health.message ?? null,
+        error: health.error ?? null,
+        data: health.data ?? null,
+        lastChecked: new Date(),
+      });
+
+      if (health.online) {
+        // Backend is reachable - load live data from API
+        try {
+          const [combatantRes, catalogRes] = await Promise.all([
+            getCombatant(COMBATANT_ID),
+            getGearCatalog(),
+          ]);
+          setCombatant(combatantRes.combatant ?? combatantRes);
+          setCatalog(catalogRes.catalog ?? catalogRes);
+          setCredits((combatantRes.combatant ?? combatantRes).credits);
+        } catch (e) {
+          console.warn("Backend reachable but data fetch failed:", e);
+        }
+
+        // If backend was offline and just came online or manual retry succeeded
+        if (prevOnlineRef.current === false || isManualRetry) {
+          setToast(`⚡ Backend online (${health.latency}ms) — Live sync active`);
+          window.setTimeout(() => setToast(null), 3000);
+        }
+      } else {
+        if (isManualRetry) {
+          setToast(`⚠️ Backend is offline (${health.error || "Unreachable"})`);
+          window.setTimeout(() => setToast(null), 3500);
+        }
       }
+      prevOnlineRef.current = health.online;
+    } catch (err) {
+      setBackendStatus({
+        online: false,
+        latency: null,
+        url: getApiBaseUrl(),
+        error: err.message || "Connection failed",
+        data: null,
+        lastChecked: new Date(),
+      });
+      prevOnlineRef.current = false;
+    } finally {
+      setIsCheckingBackend(false);
     }
-
-    bootstrap();
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  // Initial check on mount + background polling every 10 seconds
+  useEffect(() => {
+    verifyBackend(false);
+
+    const intervalId = setInterval(() => {
+      verifyBackend(false);
+    }, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [verifyBackend]);
 
   const equippedItems = useMemo(
     () => Object.values(loadout).filter(Boolean),
@@ -137,13 +194,11 @@ export default function App() {
   return (
     <div className="min-h-screen px-4 py-6 sm:px-8 sm:py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-5">
-        {offline && (
-          <div className="flex items-center gap-2 rounded-sm border border-amber/30 bg-amber/10 px-4 py-2.5 font-body text-sm text-amber">
-            <WifiOff className="h-4 w-4 shrink-0" />
-            Backend link unreachable — running on local demo data. Purchases and
-            validation are simulated client-side.
-          </div>
-        )}
+        <BackendStatusBanner
+          backendStatus={backendStatus}
+          onRetry={() => verifyBackend(true)}
+          isChecking={isCheckingBackend}
+        />
 
         <HudTelemetry
           combatantName={combatant.name}
@@ -152,6 +207,9 @@ export default function App() {
           recoveryRate={recoveryRate}
           credits={credits}
           burnoutRisk={burnoutRisk}
+          backendStatus={backendStatus}
+          onRetryBackend={() => verifyBackend(true)}
+          isCheckingBackend={isCheckingBackend}
         />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1.4fr]">

@@ -6,7 +6,8 @@ import {
     purchaseGear,
     equipLoadout,
     getInventory,
-    getApiBaseUrl
+    getApiBaseUrl,
+    checkBackendHealth
 } from './REQUEST/api.js';
 
 // ============================================
@@ -25,7 +26,8 @@ const state = {
     },
     currentTab: 'armory',
     isLoading: false,
-    validationResult: null
+    validationResult: null,
+    backendOnline: null
 };
 
 // ============================================
@@ -60,15 +62,68 @@ const DOM = {
     marketplaceContent: $('marketplaceContent'),
     tabBtns: document.querySelectorAll('.tab-btn'),
 
-    // Status
+    // Status & Health
     connectionStatus: $('connectionStatus'),
+    statusDot: $('statusDot'),
+    retryConnectionBtn: $('retryConnectionBtn'),
+    backendOfflineBanner: $('backendOfflineBanner'),
+    bannerRetryBtn: $('bannerRetryBtn'),
+    bannerApiUrl: $('bannerApiUrl'),
 };
+
+// ============================================
+// BACKEND HEALTH CHECK
+// ============================================
+async function checkHealth(isManual = false) {
+    if (DOM.retryConnectionBtn && isManual) DOM.retryConnectionBtn.classList.add('spinning');
+    if (DOM.bannerRetryBtn && isManual) DOM.bannerRetryBtn.textContent = 'CHECKING...';
+
+    try {
+        const health = await checkBackendHealth(3000);
+        const wasOffline = state.backendOnline === false;
+        state.backendOnline = health.online;
+
+        if (health.online) {
+            if (DOM.connectionStatus) DOM.connectionStatus.textContent = `CONNECTED (${health.latency}ms) ✅`;
+            if (DOM.statusDot) DOM.statusDot.className = 'dot online';
+            if (DOM.backendOfflineBanner) DOM.backendOfflineBanner.classList.add('hidden');
+
+            // If backend came back online, refresh data
+            if (wasOffline || isManual) {
+                await loadCombatant(1);
+                await loadCatalog();
+                await loadInventory(1);
+            }
+        } else {
+            if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE ⚠️';
+            if (DOM.statusDot) DOM.statusDot.className = 'dot offline';
+            if (DOM.backendOfflineBanner) {
+                DOM.backendOfflineBanner.classList.remove('hidden');
+                if (DOM.bannerApiUrl) DOM.bannerApiUrl.textContent = health.url;
+            }
+        }
+    } catch (err) {
+        state.backendOnline = false;
+        if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE ⚠️';
+        if (DOM.statusDot) DOM.statusDot.className = 'dot offline';
+        if (DOM.backendOfflineBanner) DOM.backendOfflineBanner.classList.remove('hidden');
+    } finally {
+        if (DOM.retryConnectionBtn) DOM.retryConnectionBtn.classList.remove('spinning');
+        if (DOM.bannerRetryBtn) DOM.bannerRetryBtn.textContent = 'RETRY CONNECTION';
+    }
+}
 
 // ============================================
 // INITIALIZATION
 // ============================================
 async function init() {
     try {
+        // Setup event listeners first
+        setupEventListeners();
+
+        // Check backend health
+        await checkHealth(false);
+
         // Load combatant data
         await loadCombatant(1);
 
@@ -78,17 +133,15 @@ async function init() {
         // Load inventory
         await loadInventory(1);
 
-        // Setup event listeners
-        setupEventListeners();
-
-        // Update connection status
-        DOM.connectionStatus.textContent = 'CONNECTED ✅';
+        // Periodic health check every 10 seconds
+        setInterval(() => checkHealth(false), 10000);
 
         console.log('✅ Aegis & Anarchy initialized');
         console.log(`📡 API Base URL: ${getApiBaseUrl()}`);
     } catch (error) {
         console.error('❌ Initialization error:', error);
-        DOM.connectionStatus.textContent = 'OFFLINE ⚠️';
+        if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE ⚠️';
+        if (DOM.statusDot) DOM.statusDot.className = 'dot offline';
     }
 }
 
@@ -462,6 +515,14 @@ function setupEventListeners() {
 
     // Clear
     DOM.clearBtn.addEventListener('click', clearLoadout);
+
+    // Backend Connection Retries
+    if (DOM.retryConnectionBtn) {
+        DOM.retryConnectionBtn.addEventListener('click', () => checkHealth(true));
+    }
+    if (DOM.bannerRetryBtn) {
+        DOM.bannerRetryBtn.addEventListener('click', () => checkHealth(true));
+    }
 
     // Remove gear from slot (event delegation)
     DOM.loadoutSlots.addEventListener('click', (e) => {

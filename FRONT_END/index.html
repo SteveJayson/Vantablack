@@ -10,7 +10,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
@@ -23,11 +23,23 @@
             </div>
             <div class="header-status">
                 <div class="status-indicator">
-                    <span class="dot online"></span>
-                    <span id="connectionStatus">CONNECTED</span>
+                    <span class="dot checking" id="statusDot"></span>
+                    <span id="connectionStatus">CHECKING LINK...</span>
+                    <button id="retryConnectionBtn" class="retry-btn" title="Ping backend server">🔄</button>
                 </div>
             </div>
         </header>
+
+        <!-- Backend Offline Notice Banner -->
+        <div id="backendOfflineBanner" class="backend-banner hidden">
+            <div class="banner-content">
+                <span class="banner-icon">⚠️</span>
+                <div class="banner-text">
+                    <strong>BACKEND SERVER NOT RUNNING:</strong> Unable to reach PHP API at <span id="bannerApiUrl">http://localhost:8080/api</span>. Running in Local Simulation Mode.
+                </div>
+                <button id="bannerRetryBtn" class="banner-btn">RETRY CONNECTION</button>
+            </div>
+        </div>
 
         <!-- Main Content -->
         <main class="hud-main">
