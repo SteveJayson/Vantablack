@@ -61,6 +61,22 @@ $app->post('/api/marketplace/sell', \Aegis\Controllers\MarketplaceController::cl
 $app->get('/api/marketplace/inventory/{id}', \Aegis\Controllers\MarketplaceController::class . ':getInventory');
 $app->get('/api/combatants/{id}/inventory', \Aegis\Controllers\MarketplaceController::class . ':getInventory');
 
+// ---------- ANALYTICS ROUTES ----------
+$app->get('/api/analytics/{id}/summary', \Aegis\Controllers\AnalyticsController::class . ':getSummary');
+$app->get('/api/analytics/{id}/achievements', \Aegis\Controllers\AnalyticsController::class . ':getAchievements');
+$app->get('/api/analytics/{id}/battle-history', \Aegis\Controllers\AnalyticsController::class . ':getBattleHistory');
+$app->post('/api/analytics/{id}/sync', \Aegis\Controllers\AnalyticsController::class . ':syncStats');
+
+// ---------- MISSION ROUTES (FIXED ORDER) ----------
+// ✅ STATIC ROUTES FIRST (no {id} parameters)
+$app->get('/api/missions/leaderboard', \Aegis\Controllers\MissionController::class . ':getLeaderboard');
+$app->get('/api/missions/completed/{id}', \Aegis\Controllers\MissionController::class . ':getCompletedMissions');
+$app->post('/api/missions/complete', \Aegis\Controllers\MissionController::class . ':completeMission');
+
+// ✅ VARIABLE ROUTES LAST (with {id} parameters)
+$app->get('/api/missions', \Aegis\Controllers\MissionController::class . ':getMissions');
+$app->get('/api/missions/{id}', \Aegis\Controllers\MissionController::class . ':getMission');
+
 // ---------- HEALTH CHECK ROUTE ----------
 $app->get('/api/health', function ($request, $response, $args) {
     $payload = [
@@ -68,9 +84,19 @@ $app->get('/api/health', function ($request, $response, $args) {
         'success' => true,
         'message' => 'Aegis & Anarchy API is running!',
         'data' => [
-            'version' => '1.0.0',
+            'version' => '2.0.0',
             'timestamp' => date('Y-m-d H:i:s'),
-            'database' => 'connected'
+            'database' => 'connected',
+            'features' => [
+                'combatants' => true,
+                'gear' => true,
+                'loadouts' => true,
+                'marketplace' => true,
+                'analytics' => true,
+                'achievements' => true,
+                'battles' => true,
+                'missions' => true
+            ]
         ]
     ];
     $response->getBody()->write(json_encode($payload));
