@@ -6,7 +6,7 @@ ini_set('display_errors', 1);
 use Slim\Factory\AppFactory;
 use Slim\Middleware\BodyParsingMiddleware;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 
 // Database config
 define('DB_HOST', 'localhost');
