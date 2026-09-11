@@ -14,10 +14,14 @@ class MarketplaceController
         $this->db = Database::getConnection();
     }
     
+    private function getQuery($request, string $key, $default = null)
+    {
+        $params = $request->getQueryParams();
+        return $params[$key] ?? $default;
+    }
+    
     /**
      * POST /api/marketplace/purchase
-     * Civilian, Hero, Villain can buy
-     * Admin cannot buy
      */
     public function purchase($request, $response, $args)
     {
@@ -28,13 +32,12 @@ class MarketplaceController
             
             if (!$body || !isset($body['combatantId']) || !isset($body['gearId'])) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 400, false, 'Invalid request: combatantId and gearId required');
+                return $this->jsonResponse($response, 400, false, 'combatantId and gearId required');
             }
             
             $combatantId = (int)$body['combatantId'];
             $gearId = $body['gearId'];
             
-            // Get combatant with role
             $stmt = $this->db->prepare("
                 SELECT id, name, credits, role, clearance_level as clearanceLevel 
                 FROM combatants WHERE id = ? FOR UPDATE
@@ -47,13 +50,11 @@ class MarketplaceController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
-            // ROLE CHECK: Admin cannot buy
             if ($combatant['role'] === 'admin') {
                 $this->db->rollBack();
                 return $this->jsonResponse($response, 403, false, 'Admins cannot purchase gear');
             }
             
-            // Get gear
             $stmt = $this->db->prepare("
                 SELECT id, name, price, slot, source, clearance_required as clearanceRequired
                 FROM gear_items WHERE id = ?
@@ -63,34 +64,30 @@ class MarketplaceController
             
             if (!$gear) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 404, false, 'Gear item not found');
+                return $this->jsonResponse($response, 404, false, 'Gear not found');
             }
             
-            // Check if already owns
+            // Check ownership
             $stmt = $this->db->prepare("SELECT id FROM inventory WHERE combatant_id = ? AND gear_id = ?");
             $stmt->execute([$combatantId, $gearId]);
             if ($stmt->fetch()) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 400, false, 'Combatant already owns this gear');
+                return $this->jsonResponse($response, 400, false, 'Already owned');
             }
             
             // Check clearance
             if ($combatant['clearanceLevel'] < $gear['clearanceRequired']) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 403, false, 'Insufficient clearance level');
+                return $this->jsonResponse($response, 403, false, 'Insufficient clearance');
             }
             
             // Check credits
             if ($combatant['credits'] < $gear['price']) {
                 $this->db->rollBack();
-                
-                // Log failed transaction
-                $this->logTransaction($combatant, 'purchase', $gear, 'failed', $combatant['credits'] - $gear['price']);
-                
+                $this->logTransaction($combatant, 'purchase', $gear, 'failed', $combatant['credits'], $combatant['credits']);
                 return $this->jsonResponse($response, 402, false, 'Insufficient credits', [
                     'required' => $gear['price'],
-                    'available' => $combatant['credits'],
-                    'shortfall' => $gear['price'] - $combatant['credits']
+                    'available' => $combatant['credits']
                 ]);
             }
             
@@ -105,7 +102,6 @@ class MarketplaceController
             $stmt = $this->db->prepare("INSERT INTO inventory (combatant_id, gear_id, equipped) VALUES (?, ?, FALSE)");
             $stmt->execute([$combatantId, $gearId]);
             
-            // Log successful transaction
             $this->logTransaction($combatant, 'purchase', $gear, 'completed', $newBalance, $creditsBefore);
             
             $this->db->commit();
@@ -123,8 +119,6 @@ class MarketplaceController
     
     /**
      * POST /api/marketplace/sell
-     * Hero and Villain can sell
-     * Civilian and Admin cannot sell
      */
     public function sell($request, $response, $args)
     {
@@ -135,13 +129,12 @@ class MarketplaceController
             
             if (!$body || !isset($body['combatantId']) || !isset($body['inventoryId'])) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 400, false, 'Invalid request: combatantId and inventoryId required');
+                return $this->jsonResponse($response, 400, false, 'combatantId and inventoryId required');
             }
             
             $combatantId = (int)$body['combatantId'];
             $inventoryId = (int)$body['inventoryId'];
             
-            // Get combatant
             $stmt = $this->db->prepare("SELECT id, name, credits, role FROM combatants WHERE id = ?");
             $stmt->execute([$combatantId]);
             $combatant = $stmt->fetch();
@@ -151,13 +144,11 @@ class MarketplaceController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
-            // ROLE CHECK: Only Heroes and Villains can sell
             if (!in_array($combatant['role'], ['hero', 'villain'])) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 403, false, 'Only heroes and villains can sell gear. ' . ucfirst($combatant['role']) . 's cannot sell.');
+                return $this->jsonResponse($response, 403, false, 'Only heroes and villains can sell gear');
             }
             
-            // Get inventory item
             $stmt = $this->db->prepare("
                 SELECT i.*, g.price, g.name, g.id as gear_id 
                 FROM inventory i
@@ -169,22 +160,19 @@ class MarketplaceController
             
             if (!$inventoryItem) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 404, false, 'Inventory item not found');
+                return $this->jsonResponse($response, 404, false, 'Item not found');
             }
             
             $sellPrice = (int)($inventoryItem['price'] * 0.5);
             $creditsBefore = $combatant['credits'];
             $newBalance = $creditsBefore + $sellPrice;
             
-            // Remove from inventory
             $stmt = $this->db->prepare("DELETE FROM inventory WHERE id = ? AND combatant_id = ?");
             $stmt->execute([$inventoryId, $combatantId]);
             
-            // Add credits
             $stmt = $this->db->prepare("UPDATE combatants SET credits = ? WHERE id = ?");
             $stmt->execute([$newBalance, $combatantId]);
             
-            // If equipped, remove from loadout
             if ($inventoryItem['equipped']) {
                 $stmt = $this->db->prepare("
                     UPDATE loadouts 
@@ -202,8 +190,7 @@ class MarketplaceController
                 ]);
             }
             
-            // Log transaction
-            $gear = ['id' => $inventoryItem['gear_id'], 'name' => $inventoryItem['name']];
+            $gear = ['id' => $inventoryItem['gear_id'], 'name' => $inventoryItem['name'], 'price' => $sellPrice];
             $this->logTransaction($combatant, 'sell', $gear, 'completed', $newBalance, $creditsBefore, $sellPrice);
             
             $this->db->commit();
@@ -255,14 +242,10 @@ class MarketplaceController
         }
     }
     
-    /**
-     * Helper: Log a transaction
-     */
-    private function logTransaction(array $combatant, string $type, array $gear, string $status, int $balanceAfter, int $balanceBefore = null, int $customAmount = null): void
+    private function logTransaction(array $combatant, string $type, array $gear, string $status, int $balanceAfter, int $balanceBefore, int $customAmount = null): void
     {
         try {
             $amount = $customAmount ?? ($gear['price'] ?? 0);
-            $before = $balanceBefore ?? ($balanceAfter + $amount);
             
             $stmt = $this->db->prepare("
                 INSERT INTO transactions 
@@ -271,20 +254,11 @@ class MarketplaceController
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
-                $combatant['id'],
-                $combatant['name'],
-                $combatant['role'],
-                $type,
-                $gear['id'],
-                $gear['name'],
-                $amount,
-                $before,
-                $balanceAfter,
-                $status
+                $combatant['id'], $combatant['name'], $combatant['role'],
+                $type, $gear['id'], $gear['name'], $amount,
+                $balanceBefore, $balanceAfter, $status
             ]);
-        } catch (\Exception $e) {
-            // Silently fail - transaction logging shouldn't break main flow
-        }
+        } catch (\Exception $e) {}
     }
     
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])

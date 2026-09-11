@@ -15,56 +15,61 @@ class GearController
     }
     
     /**
+     * Helper: Get query parameter (Slim 4 compatible)
+     */
+    private function getQuery($request, string $key, $default = null)
+    {
+        $params = $request->getQueryParams();
+        return $params[$key] ?? $default;
+    }
+    
+    /**
      * GET /api/gear
      */
     public function getCatalog($request, $response, $args)
     {
         try {
-            // ✅ FIXED: Use getQueryParams() for Slim 4
-            $queryParams = $request->getQueryParams();
+            $slot = $this->getQuery($request, 'slot');
+            $source = $this->getQuery($request, 'source');
+            $minPrice = $this->getQuery($request, 'minPrice');
+            $maxPrice = $this->getQuery($request, 'maxPrice');
             
             $query = "SELECT 
                 id, slot, source, name, price,
                 bio_capacity as bioCapacity,
                 recovery_rate as recoveryRate,
                 risk_modifier as riskModifier,
-                clearance_required as clearanceRequired,
-                tier, is_legendary as isLegendary
+                clearance_required as clearanceRequired
             FROM gear_items";
             
             $params = [];
             $conditions = [];
             
-            if (isset($queryParams['slot'])) {
+            if ($slot) {
                 $conditions[] = "slot = ?";
-                $params[] = $queryParams['slot'];
+                $params[] = $slot;
             }
             
-            if (isset($queryParams['source'])) {
+            if ($source) {
                 $conditions[] = "source = ?";
-                $params[] = $queryParams['source'];
+                $params[] = $source;
             }
             
-            if (isset($queryParams['minPrice'])) {
+            if ($minPrice) {
                 $conditions[] = "price >= ?";
-                $params[] = (int)$queryParams['minPrice'];
+                $params[] = (int)$minPrice;
             }
             
-            if (isset($queryParams['maxPrice'])) {
+            if ($maxPrice) {
                 $conditions[] = "price <= ?";
-                $params[] = (int)$queryParams['maxPrice'];
-            }
-            
-            if (isset($queryParams['tier'])) {
-                $conditions[] = "tier = ?";
-                $params[] = (int)$queryParams['tier'];
+                $params[] = (int)$maxPrice;
             }
             
             if (!empty($conditions)) {
                 $query .= " WHERE " . implode(" AND ", $conditions);
             }
             
-            $query .= " ORDER BY tier ASC, price ASC";
+            $query .= " ORDER BY price ASC";
             
             $stmt = $this->db->prepare($query);
             $stmt->execute($params);
@@ -95,9 +100,9 @@ class GearController
                     bio_capacity as bioCapacity,
                     recovery_rate as recoveryRate,
                     risk_modifier as riskModifier,
-                    clearance_required as clearanceRequired,
-                    tier, is_legendary as isLegendary
-                FROM gear_items WHERE id = ?
+                    clearance_required as clearanceRequired
+                FROM gear_items
+                WHERE id = ?
             ");
             $stmt->execute([$id]);
             $gear = $stmt->fetch();
@@ -115,7 +120,13 @@ class GearController
     
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
     {
-        $payload = ['status' => $status, 'success' => $success, 'message' => $message, 'data' => $data];
+        $payload = [
+            'status' => $status,
+            'success' => $success,
+            'message' => $message,
+            'data' => $data
+        ];
+        
         $response->getBody()->write(json_encode($payload));
         return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
     }

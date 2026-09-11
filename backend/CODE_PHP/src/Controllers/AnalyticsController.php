@@ -17,6 +17,15 @@ class AnalyticsController
     }
     
     /**
+     * Helper: Get query parameter (Slim 4 compatible)
+     */
+    private function getQuery($request, string $key, $default = null)
+    {
+        $params = $request->getQueryParams();
+        return $params[$key] ?? $default;
+    }
+    
+    /**
      * GET /api/analytics/{id}/summary
      */
     public function getSummary($request, $response, $args)
@@ -115,10 +124,7 @@ class AnalyticsController
     public function getBattleHistory($request, $response, $args)
     {
         $combatantId = $args['id'] ?? null;
-        
-        // ✅ FIXED: Use getQueryParams() for Slim 4
-        $queryParams = $request->getQueryParams();
-        $limit = (int)($queryParams['limit'] ?? 20);
+        $limit = (int)$this->getQuery($request, 'limit', 20);
         
         if (!$combatantId) {
             return $this->jsonResponse($response, 400, false, 'Combatant ID required');
@@ -134,8 +140,7 @@ class AnalyticsController
             $stmt = $this->db->prepare("
                 SELECT 
                     id, opponent_name, battle_type, result,
-                    credits_earned, gear_dropped,
-                    damage_dealt, damage_taken,
+                    credits_earned, gear_dropped, damage_dealt, damage_taken,
                     battle_duration_seconds, fought_at
                 FROM battle_history
                 WHERE combatant_id = ?
@@ -182,10 +187,6 @@ class AnalyticsController
         }
     }
     
-    // ============================================
-    // PRIVATE METHODS
-    // ============================================
-    
     private function getOrCreateStats(int $combatantId): array
     {
         $stmt = $this->db->prepare("SELECT * FROM combatant_stats WHERE combatant_id = ?");
@@ -206,43 +207,54 @@ class AnalyticsController
     
     private function getAchievementsData(int $combatantId): array
     {
-        $stmt = $this->db->prepare("
-            SELECT 
-                a.id, a.name, a.description, a.category, a.points, a.badge_icon,
-                COALESCE(ca.is_completed, 0) as is_completed,
-                COALESCE(ca.progress, 0) as progress,
-                ca.unlocked_at, a.unlock_condition
-            FROM achievements a
-            LEFT JOIN combatant_achievements ca 
-                ON a.id = ca.achievement_id AND ca.combatant_id = ?
-            ORDER BY a.category, a.points ASC
-        ");
-        $stmt->execute([$combatantId]);
-        $achievements = $stmt->fetchAll();
-        
-        $totalPoints = 0;
-        $completed = 0;
-        
-        foreach ($achievements as &$ach) {
-            $ach['is_completed'] = (bool)$ach['is_completed'];
-            $ach['progress'] = (int)$ach['progress'];
-            $ach['unlock_condition'] = json_decode($ach['unlock_condition'] ?? '{}', true);
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    a.id, a.name, a.description, a.category, a.points, a.badge_icon,
+                    COALESCE(ca.is_completed, 0) as is_completed,
+                    COALESCE(ca.progress, 0) as progress,
+                    ca.unlocked_at,
+                    a.unlock_condition
+                FROM achievements a
+                LEFT JOIN combatant_achievements ca 
+                    ON a.id = ca.achievement_id AND ca.combatant_id = ?
+                ORDER BY a.category, a.points ASC
+            ");
+            $stmt->execute([$combatantId]);
+            $achievements = $stmt->fetchAll();
             
-            if ($ach['is_completed']) {
-                $totalPoints += (int)$ach['points'];
-                $completed++;
+            $totalPoints = 0;
+            $completed = 0;
+            
+            foreach ($achievements as &$ach) {
+                $ach['is_completed'] = (bool)$ach['is_completed'];
+                $ach['progress'] = (int)$ach['progress'];
+                $ach['unlock_condition'] = json_decode($ach['unlock_condition'] ?? '{}', true);
+                
+                if ($ach['is_completed']) {
+                    $totalPoints += (int)$ach['points'];
+                    $completed++;
+                }
             }
+            
+            return [
+                'list' => $achievements,
+                'total_points' => $totalPoints,
+                'total_achievements' => count($achievements),
+                'completed_achievements' => $completed,
+                'completion_percentage' => count($achievements) > 0 
+                    ? round(($completed / count($achievements)) * 100) 
+                    : 0
+            ];
+        } catch (Exception $e) {
+            return [
+                'list' => [],
+                'total_points' => 0,
+                'total_achievements' => 0,
+                'completed_achievements' => 0,
+                'completion_percentage' => 0
+            ];
         }
-        
-        return [
-            'list' => $achievements,
-            'total_points' => $totalPoints,
-            'total_achievements' => count($achievements),
-            'completed_achievements' => $completed,
-            'completion_percentage' => count($achievements) > 0 
-                ? round(($completed / count($achievements)) * 100) 
-                : 0
-        ];
     }
     
     private function getRecentActivity(int $combatantId, int $limit = 10): array
@@ -297,7 +309,8 @@ class AnalyticsController
                     SUM(CASE WHEN result = 'draw' THEN 1 ELSE 0 END) as draws,
                     COALESCE(AVG(damage_dealt), 0) as avg_damage_dealt,
                     COALESCE(AVG(damage_taken), 0) as avg_damage_taken
-                FROM battle_history WHERE combatant_id = ?
+                FROM battle_history
+                WHERE combatant_id = ?
             ");
             $stmt->execute([$combatantId]);
             $stats = $stmt->fetch();
@@ -324,7 +337,9 @@ class AnalyticsController
     private function calculateWinRate(array $stats): float
     {
         $total = ($stats['total_battles_won'] ?? 0) + ($stats['total_battles_lost'] ?? 0) + ($stats['total_battles_drawn'] ?? 0);
-        return $total > 0 ? round((($stats['total_battles_won'] ?? 0) / $total) * 100, 1) : 0;
+        return $total > 0 
+            ? round((($stats['total_battles_won'] ?? 0) / $total) * 100, 1)
+            : 0;
     }
     
     private function updateCombatantStats(int $combatantId): void
@@ -347,14 +362,18 @@ class AnalyticsController
                 WHERE cs.combatant_id = ?
             ");
             $stmt->execute([$combatantId, $combatantId, $combatantId, $combatantId]);
-        } catch (Exception $e) {
-            // Silently fail
-        }
+        } catch (Exception $e) {}
     }
     
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
     {
-        $payload = ['status' => $status, 'success' => $success, 'message' => $message, 'data' => $data];
+        $payload = [
+            'status' => $status,
+            'success' => $success,
+            'message' => $message,
+            'data' => $data
+        ];
+        
         $response->getBody()->write(json_encode($payload));
         return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
     }

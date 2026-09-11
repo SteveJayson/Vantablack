@@ -1,169 +1,1461 @@
-<!-- FRONT_END/index.html -->
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aegis & Anarchy - Tactical HUD</title>
-    <!-- Google Fonts for cyberpunk/tech feel -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap"
-        rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
+    <title>Aegis & Anarchy - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #00f0ff;
+            --secondary: #ff00ff;
+            --danger: #ff0044;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --bg-dark: #0a0a1a;
+            --bg-panel: rgba(10, 10, 30, 0.85);
+            --text: #e0e0ff;
+            --text-dim: #8888cc;
+        }
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            background-image: 
+                radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(255, 0, 255, 0.05) 0%, transparent 60%);
+        }
+        
+        /* ============================================
+           SCREENS
+        ============================================ */
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        /* ============================================
+           LOGIN SCREEN
+        ============================================ */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-wrapper {
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-logo h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .login-logo p {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 4px;
+        }
+        
+        .login-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
+        }
+        
+        .login-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: var(--bg-dark);
+        }
+        
+        .btn-login:hover {
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+        
+        .login-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        
+        .login-link a:hover { text-decoration: underline; }
+        
+        .demo-accounts {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-size: 0.7rem;
+        }
+        
+        .demo-accounts h3 {
+            color: var(--warning);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .demo-account {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .demo-account:hover { color: var(--primary); }
+        
+        /* ============================================
+           REGISTER SCREEN
+        ============================================ */
+        .register-container {
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .register-wrapper {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .register-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
+        }
+        
+        .register-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 900px) { .role-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { .role-grid { grid-template-columns: 1fr; } }
+        
+        .role-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 240, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+        }
+        
+        .role-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .role-card.selected { border-color: var(--primary); background: rgba(0, 240, 255, 0.1); box-shadow: 0 0 30px rgba(0, 240, 255, 0.3); }
+        
+        .role-card[data-role="civilian"]:hover,
+        .role-card[data-role="civilian"].selected {
+            border-color: var(--warning);
+            background: rgba(255, 170, 0, 0.1);
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
+        }
+        
+        .role-card[data-role="villain"]:hover,
+        .role-card[data-role="villain"].selected {
+            border-color: var(--danger);
+            background: rgba(255, 0, 68, 0.1);
+            box-shadow: 0 0 30px rgba(255, 0, 68, 0.3);
+        }
+        
+        .role-card[data-role="admin"]:hover,
+        .role-card[data-role="admin"].selected {
+            border-color: var(--secondary);
+            background: rgba(255, 0, 255, 0.1);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+        }
+        
+        .role-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        
+        .role-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        
+        .role-card[data-role="civilian"] .role-name { color: var(--warning); }
+        .role-card[data-role="hero"] .role-name { color: var(--primary); }
+        .role-card[data-role="villain"] .role-name { color: var(--danger); }
+        .role-card[data-role="admin"] .role-name { color: var(--secondary); }
+        
+        .role-desc {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .role-benefits {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-align: left;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .role-benefits div { padding: 2px 0; }
+        
+        .role-card .checkmark {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: var(--bg-dark);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 900;
+        }
+        
+        .role-card.selected .checkmark { display: flex; }
+        .role-card[data-role="civilian"].selected .checkmark { background: var(--warning); }
+        .role-card[data-role="villain"].selected .checkmark { background: var(--danger); color: white; }
+        .role-card[data-role="admin"].selected .checkmark { background: var(--secondary); color: white; }
+        
+        /* ============================================
+           DASHBOARD
+        ============================================ */
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-panel); padding: 20px 30px; border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.2); margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
+            flex-wrap: wrap; gap: 15px;
+        }
+        
+        .logo h1 {
+            font-family: 'Orbitron', sans-serif; font-size: 1.8rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        
+        .logo p { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 4px; }
+        
+        .user-info {
+            display: flex; align-items: center; gap: 15px;
+            padding: 10px 20px; background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px; border: 1px solid rgba(0, 240, 255, 0.2);
+        }
+        
+        .user-info .username {
+            font-family: 'Orbitron', sans-serif; font-size: 0.85rem;
+        }
+        
+        .logout-btn {
+            padding: 8px 16px; background: rgba(255, 0, 68, 0.2);
+            border: 1px solid var(--danger); color: var(--danger);
+            border-radius: 6px; cursor: pointer;
+            font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+            font-weight: 700; letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover { background: var(--danger); color: white; }
+        
+        .grid {
+            display: grid; grid-template-columns: 320px 1fr 400px;
+            gap: 20px;
+        }
+        
+        @media (max-width: 1200px) { .grid { grid-template-columns: 1fr; } }
+        
+        .panel {
+            background: var(--bg-panel); border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            padding: 20px; backdrop-filter: blur(10px);
+            max-height: 80vh; overflow-y: auto;
+        }
+        
+        .panel h2 {
+            font-family: 'Orbitron', sans-serif; font-size: 0.9rem;
+            color: var(--primary); margin-bottom: 15px; letter-spacing: 2px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            padding-bottom: 10px;
+        }
+        
+        .profile-card {
+            background: rgba(0, 240, 255, 0.05); padding: 20px;
+            border-radius: 10px; border: 1px solid rgba(0, 240, 255, 0.2);
+            margin-bottom: 15px;
+        }
+        
+        .profile-name {
+            font-family: 'Orbitron', sans-serif; font-size: 1.3rem;
+            color: var(--text); margin-bottom: 5px;
+        }
+        
+        .role-badge {
+            display: inline-block; padding: 4px 12px; border-radius: 12px;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+        
+        .role-badge.civilian { background: rgba(255,170,0,0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .role-badge.hero { background: rgba(0,240,255,0.2); color: var(--primary); border: 1px solid var(--primary); }
+        .role-badge.villain { background: rgba(255,0,68,0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .role-badge.admin { background: rgba(255,0,255,0.2); color: var(--secondary); border: 1px solid var(--secondary); }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        .stat {
+            background: rgba(0,0,0,0.3); padding: 10px;
+            border-radius: 6px; text-align: center;
+        }
+        
+        .stat-value {
+            font-family: 'Orbitron', sans-serif; font-size: 1.3rem;
+            color: var(--primary); font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 0.6rem; color: var(--text-dim);
+            letter-spacing: 1px; margin-top: 4px;
+        }
+        
+        .permissions {
+            background: rgba(0,0,0,0.3); padding: 15px;
+            border-radius: 8px; margin-top: 15px;
+        }
+        
+        .permissions h3 {
+            font-size: 0.75rem; color: var(--text-dim);
+            letter-spacing: 2px; margin-bottom: 10px;
+        }
+        
+        .permission-item {
+            display: flex; justify-content: space-between;
+            padding: 6px 0; font-size: 0.8rem;
+            border-bottom: 1px solid rgba(0,240,255,0.05);
+        }
+        
+        .permission-item.allowed { color: var(--success); }
+        .permission-item.denied { color: var(--danger); }
+        
+        .marketplace-tabs {
+            display: flex; gap: 5px; margin-bottom: 15px;
+            background: rgba(0,0,0,0.3); padding: 5px; border-radius: 8px;
+        }
+        
+        .tab-btn {
+            flex: 1; padding: 8px 12px; background: transparent;
+            border: none; color: var(--text-dim); cursor: pointer;
+            font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+            font-weight: 700; letter-spacing: 1px; border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active { background: rgba(0, 240, 255, 0.15); color: var(--primary); }
+        
+        .gear-grid { display: grid; gap: 10px; }
+        
+        .gear-card {
+            background: rgba(0,0,0,0.3); padding: 12px;
+            border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .gear-card:hover { border-color: var(--primary); transform: translateX(4px); }
+        
+        .gear-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; }
+        .gear-meta { font-size: 0.65rem; color: var(--text-dim); margin-bottom: 6px; }
+        
+        .gear-stats { display: flex; gap: 10px; font-size: 0.65rem; margin-bottom: 8px; }
+        .gear-stats span { padding: 2px 6px; border-radius: 3px; background: rgba(0,0,0,0.3); }
+        .stat-bio { color: var(--primary); }
+        .stat-risk { color: var(--warning); }
+        
+        .gear-price {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-top: 8px;
+            padding-top: 8px; border-top: 1px solid rgba(0,240,255,0.1);
+        }
+        
+        .price { color: var(--success); font-weight: 700; }
+        
+        .btn {
+            padding: 6px 14px; border: none; border-radius: 6px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+            font-weight: 700; letter-spacing: 1px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary { background: var(--primary); color: var(--bg-dark); }
+        .btn-success { background: var(--success); color: var(--bg-dark); }
+        .btn-danger { background: var(--danger); color: white; }
+        
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .admin-dashboard { display: none; }
+        .admin-dashboard.active { display: block; }
+        
+        .admin-stats {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 10px; margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        .admin-stat {
+            background: rgba(255,0,255,0.05); padding: 15px;
+            border-radius: 8px; border: 1px solid rgba(255,0,255,0.2);
+            text-align: center;
+        }
+        
+        .admin-stat-value {
+            font-family: 'Orbitron', sans-serif; font-size: 1.8rem;
+            font-weight: 900; margin-bottom: 5px;
+        }
+        
+        .admin-stat.civilians .admin-stat-value { color: var(--warning); }
+        .admin-stat.heroes .admin-stat-value { color: var(--primary); }
+        .admin-stat.villains .admin-stat-value { color: var(--danger); }
+        .admin-stat.admins .admin-stat-value { color: var(--secondary); }
+        
+        .admin-stat-label {
+            font-size: 0.65rem; color: var(--text-dim); letter-spacing: 2px;
+        }
+        
+        .transaction-table {
+            width: 100%; border-collapse: collapse; margin-top: 10px;
+            font-size: 0.75rem;
+        }
+        
+        .transaction-table th {
+            text-align: left; padding: 10px 8px;
+            color: var(--primary); font-size: 0.65rem;
+            letter-spacing: 1px; border-bottom: 1px solid rgba(0,240,255,0.2);
+        }
+        
+        .transaction-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(0,240,255,0.05);
+        }
+        
+        .transaction-table tr:hover { background: rgba(0,240,255,0.03); }
+        
+        .badge-role {
+            padding: 3px 8px; border-radius: 10px;
+            font-size: 0.6rem; font-weight: 700;
+        }
+        
+        .badge-role.civilian { background: rgba(255,170,0,0.2); color: var(--warning); }
+        .badge-role.hero { background: rgba(0,240,255,0.2); color: var(--primary); }
+        .badge-role.villain { background: rgba(255,0,68,0.2); color: var(--danger); }
+        .badge-role.admin { background: rgba(255,0,255,0.2); color: var(--secondary); }
+        
+        .badge-status {
+            padding: 3px 8px; border-radius: 10px;
+            font-size: 0.6rem; font-weight: 700;
+        }
+        
+        .badge-status.completed { background: rgba(0,255,136,0.2); color: var(--success); }
+        .badge-status.failed { background: rgba(255,0,68,0.2); color: var(--danger); }
+        
+        .alert {
+            padding: 12px 16px; border-radius: 8px;
+            margin-bottom: 15px; font-size: 0.8rem;
+            display: none;
+        }
+        
+        .alert.show { display: block; }
+        .alert.success { background: rgba(0,255,136,0.1); border: 1px solid var(--success); color: var(--success); }
+        .alert.error { background: rgba(255,0,68,0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .alert.warning { background: rgba(255,170,0,0.1); border: 1px solid var(--warning); color: var(--warning); }
+        
+        .loading {
+            text-align: center; padding: 20px;
+            color: var(--text-dim); font-size: 0.8rem;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+    </style>
 </head>
-
 <body>
-    <div id="app">
-        <!-- Header / HUD Top Bar -->
-        <header class="hud-header">
-            <div class="logo">
-                <h1>⚡ AEGIS & ANARCHY</h1>
-                <span class="subtitle">TACTICAL LOADOUT SYSTEM v2.1</span>
-            </div>
-            <div class="header-status">
-                <div class="status-indicator">
-                    <span class="dot checking" id="statusDot"></span>
-                    <span id="connectionStatus">CHECKING LINK...</span>
-                    <button id="retryConnectionBtn" class="retry-btn" title="Ping backend server">🔄</button>
+    <!-- ============================================
+         LOGIN SCREEN
+    ============================================ -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-wrapper">
+                <div class="login-logo">
+                    <h1>⚡ AEGIS & ANARCHY</h1>
+                    <p>TACTICAL ACCESS PORTAL</p>
                 </div>
-            </div>
-        </header>
 
-        <!-- Backend Offline Notice Banner -->
-        <div id="backendOfflineBanner" class="backend-banner hidden">
-            <div class="banner-content">
-                <span class="banner-icon">⚠️</span>
-                <div class="banner-text">
-                    <strong>BACKEND SERVER NOT RUNNING:</strong> Unable to reach PHP API at <span id="bannerApiUrl">http://localhost:8080/api</span>. Running in Local Simulation Mode.
+                <div class="login-card">
+                    <h2>🔐 SYSTEM LOGIN</h2>
+                    
+                    <div id="loginAlert" class="alert"></div>
+                    
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="loginUsername" placeholder="Enter username" autocomplete="username" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" />
+                    </div>
+                    
+                    <button class="btn-login" id="loginBtn" onclick="handleLogin()">⚡ LOGIN</button>
+                    
+                    <div class="login-link">
+                        Don't have an account? <a onclick="showScreen('register')">Register here</a>
+                    </div>
                 </div>
-                <button id="bannerRetryBtn" class="banner-btn">RETRY CONNECTION</button>
             </div>
         </div>
-
-        <!-- Main Content -->
-        <main class="hud-main">
-            <!-- Left Panel: Combatant Profile & Telemetry -->
-            <div class="panel left-panel">
-                <!-- Combatant Profile -->
-                <div class="profile-card" id="profileCard">
-                    <div class="profile-header">
-                        <h2 id="combatantName">VANTABLACK</h2>
-                        <span class="faction-tag hero" id="factionTag">HERO</span>
-                    </div>
-                    <div class="profile-stats">
-                        <div class="stat">
-                            <span class="stat-label">Bio Capacity</span>
-                            <span class="stat-value" id="bioCapacity">1400</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">Recovery</span>
-                            <span class="stat-value" id="recoveryRate">3</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">Risk</span>
-                            <span class="stat-value" id="riskLevel">12</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">Credits</span>
-                            <span class="stat-value" id="credits">8200</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Telemetry Bar -->
-                <div class="telemetry-container">
-                    <h3>BIO-TELEMETRY</h3>
-                    <div class="telemetry-bar" id="telemetryBar">
-                        <div class="telemetry-fill" id="telemetryFill" style="width: 65%"></div>
-                    </div>
-                    <div class="telemetry-details">
-                        <span id="telemetryLabel">Bio Energy: 65%</span>
-                        <span id="telemetryWarnings">⚠️ WARNING: Elevated burnout risk</span>
-                    </div>
-                </div>
-
-                <!-- Burnout Risk Gauge -->
-                <div class="burnout-gauge-container">
-                    <h3>BURNOUT RISK</h3>
-                    <div class="gauge" id="burnoutGauge">
-                        <div class="gauge-fill" id="burnoutFill" style="width: 35%"></div>
-                        <span class="gauge-label" id="burnoutLabel">35%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Center Panel: Loadout Builder -->
-            <div class="panel center-panel">
-                <div class="loadout-builder">
-                    <h2>⚙️ LOADOUT CUSTOMIZER</h2>
-                    <div class="loadout-slots" id="loadoutSlots">
-                        <!-- 5 slots: helmet, core, dampener, gauntlets, battery -->
-                        <div class="slot" data-slot="helmet">
-                            <span class="slot-label">HELMET</span>
-                            <div class="slot-content" id="slot-helmet">
-                                <span class="empty-slot">Empty</span>
-                            </div>
-                        </div>
-                        <div class="slot" data-slot="core">
-                            <span class="slot-label">CORE</span>
-                            <div class="slot-content" id="slot-core">
-                                <span class="empty-slot">Empty</span>
-                            </div>
-                        </div>
-                        <div class="slot" data-slot="dampener">
-                            <span class="slot-label">DAMPENER</span>
-                            <div class="slot-content" id="slot-dampener">
-                                <span class="empty-slot">Empty</span>
-                            </div>
-                        </div>
-                        <div class="slot" data-slot="gauntlets">
-                            <span class="slot-label">GAUNTLETS</span>
-                            <div class="slot-content" id="slot-gauntlets">
-                                <span class="empty-slot">Empty</span>
-                            </div>
-                        </div>
-                        <div class="slot" data-slot="battery">
-                            <span class="slot-label">BATTERY</span>
-                            <div class="slot-content" id="slot-battery">
-                                <span class="empty-slot">Empty</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="loadout-actions">
-                        <button id="validateLoadoutBtn" class="btn btn-primary">🔍 VALIDATE LOADOUT</button>
-                        <button id="equipLoadoutBtn" class="btn btn-success">✅ EQUIP LOADOUT</button>
-                        <button id="clearLoadoutBtn" class="btn btn-danger">🗑️ CLEAR ALL</button>
-                    </div>
-                    <div id="validationResult" class="validation-result"></div>
-                </div>
-            </div>
-
-            <!-- Right Panel: Marketplace / Armory -->
-            <div class="panel right-panel">
-                <div class="marketplace">
-                    <h2>🏪 MARKETPLACE</h2>
-                    <div class="marketplace-tabs">
-                        <button class="tab-btn active" data-tab="armory">ARMORY</button>
-                        <button class="tab-btn" data-tab="black-market">BLACK MARKET</button>
-                        <button class="tab-btn" data-tab="inventory">INVENTORY</button>
-                    </div>
-                    <div class="marketplace-content" id="marketplaceContent">
-                        <!-- Dynamic content -->
-                        <div class="loading-spinner">Loading gear...</div>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="hud-footer">
-            <span>⚡ Aegis & Anarchy v1.0 | Powered by Neural Bio-Energy Engine</span>
-        </footer>
     </div>
 
-    <!-- JavaScript -->
-    <script type="module" src="main.js"></script>
-</body>
+    <!-- ============================================
+         REGISTER SCREEN
+    ============================================ -->
+    <div id="registerScreen" class="screen">
+        <div class="register-container">
+            <div class="register-wrapper">
+                <div class="login-logo">
+                    <h1>⚡ AEGIS & ANARCHY</h1>
+                    <p>NEW USER REGISTRATION</p>
+                </div>
+                
+                <div class="register-card">
+                    <h2>📝 CREATE ACCOUNT</h2>
+                    
+                    <div id="registerAlert" class="alert"></div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Display Name</label>
+                            <input type="text" id="regName" placeholder="e.g. John Doe" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" id="regUsername" placeholder="e.g. johndoe" />
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password (min 6 characters)</label>
+                        <input type="password" id="regPassword" placeholder="Enter password" />
+                    </div>
+                    
+                    <h3 style="color: var(--primary); font-family: Orbitron; font-size: 0.85rem; text-align: center; margin: 20px 0 15px; letter-spacing: 2px;">🎭 CHOOSE YOUR ROLE</h3>
+                    
+                    <div class="role-grid">
+                        <div class="role-card selected" data-role="civilian" onclick="selectRole('civilian')">
+                            <div class="checkmark">✓</div>
+                            <div class="role-icon">👤</div>
+                            <div class="role-name">CIVILIAN</div>
+                            <div class="role-desc">Regular citizen. Safe and simple.</div>
+                            <div class="role-benefits">
+                                <div>✅ Buy gear</div>
+                                <div>❌ Cannot sell</div>
+                                <div>💰 500 credits</div>
+                            </div>
+                        </div>
+                        
+                        <div class="role-card" data-role="hero" onclick="selectRole('hero')">
+                            <div class="checkmark">✓</div>
+                            <div class="role-icon">🦸</div>
+                            <div class="role-name">HERO</div>
+                            <div class="role-desc">Defender of justice.</div>
+                            <div class="role-benefits">
+                                <div>✅ Buy gear</div>
+                                <div>✅ Sell gear</div>
+                                <div>💰 5,000 credits</div>
+                            </div>
+                        </div>
+                        
+                        <div class="role-card" data-role="villain" onclick="selectRole('villain')">
+                            <div class="checkmark">✓</div>
+                            <div class="role-icon">🦹</div>
+                            <div class="role-name">VILLAIN</div>
+                            <div class="role-desc">Master of chaos.</div>
+                            <div class="role-benefits">
+                                <div>✅ Buy gear</div>
+                                <div>✅ Sell gear</div>
+                                <div>💰 5,000 credits</div>
+                            </div>
+                        </div>
+                        
+                        <div class="role-card" data-role="admin" onclick="selectRole('admin')">
+                            <div class="checkmark">✓</div>
+                            <div class="role-icon">👑</div>
+                            <div class="role-name">ADMIN</div>
+                            <div class="role-desc">System administrator.</div>
+                            <div class="role-benefits">
+                                <div>📊 View dashboard</div>
+                                <div>📜 View transactions</div>
+                                <div>❌ Cannot buy/sell</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-login" id="registerBtn" onclick="handleRegister()" style="margin-top: 20px;">⚡ CREATE ACCOUNT</button>
+                    
+                    <div class="login-link">
+                        Already have an account? <a onclick="showScreen('login')">Login here</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- ============================================
+         DASHBOARD SCREEN
+    ============================================ -->
+    <div id="dashboardScreen" class="screen">
+        <div class="container">
+            <div class="header">
+                <div class="logo">
+                    <h1>⚡ AEGIS & ANARCHY</h1>
+                    <p>TACTICAL COMMAND CENTER</p>
+                </div>
+                <div class="user-info">
+                    <span class="username" id="headerUsername">Loading...</span>
+                    <span class="role-badge hero" id="headerRole">...</span>
+                    <button class="logout-btn" onclick="logout()">🚪 LOGOUT</button>
+                </div>
+            </div>
+
+            <div id="dashAlert" class="alert"></div>
+
+            <div class="grid">
+                <div class="panel">
+                    <h2>🎭 ACTIVE USER</h2>
+                    <div class="profile-card">
+                        <div class="profile-name" id="profileName">Loading...</div>
+                        <div class="role-badge hero" id="profileRole">...</div>
+                        <div class="stats-grid">
+                            <div class="stat">
+                                <div class="stat-value" id="profileCredits">0</div>
+                                <div class="stat-label">CREDITS</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="profileBio">0</div>
+                                <div class="stat-label">BIO CAP</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="permissions">
+                        <h3>🔐 PERMISSIONS</h3>
+                        <div class="permission-item allowed">
+                            <span>🛒 Buy Armor</span>
+                            <span id="permBuy">✅ YES</span>
+                        </div>
+                        <div class="permission-item denied">
+                            <span>💰 Sell Armor</span>
+                            <span id="permSell">❌ NO</span>
+                        </div>
+                        <div class="permission-item denied">
+                            <span>📊 View Dashboard</span>
+                            <span id="permDash">❌ NO</span>
+                        </div>
+                        <div class="permission-item denied">
+                            <span>📜 View Transactions</span>
+                            <span id="permTrans">❌ NO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div id="regularView">
+                        <h2>🏪 MARKETPLACE</h2>
+                        <div class="marketplace-tabs">
+                            <button class="tab-btn active" onclick="showTab('armory', this)">ARMORY</button>
+                            <button class="tab-btn" onclick="showTab('black-market', this)">BLACK MARKET</button>
+                            <button class="tab-btn" onclick="showTab('inventory', this)">INVENTORY</button>
+                        </div>
+                        <div id="marketplaceContent" class="gear-grid">
+                            <div class="loading">Loading gear...</div>
+                        </div>
+                    </div>
+                    
+                    <div id="adminView" class="admin-dashboard">
+    <h2>👑 ADMIN DASHBOARD</h2>
+    
+    <!-- REGISTERED USERS -->
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: var(--primary); font-family: Orbitron; font-size: 0.8rem; margin-bottom: 10px; letter-spacing: 2px;">
+            📋 REGISTERED USERS
+        </h3>
+        <div class="admin-stats">
+            <div class="admin-stat civilians">
+                <div class="admin-stat-value" id="regCivilians">0</div>
+                <div class="admin-stat-label">👤 CIVILIANS</div>
+            </div>
+            <div class="admin-stat heroes">
+                <div class="admin-stat-value" id="regHeroes">0</div>
+                <div class="admin-stat-label">🦸 HEROES</div>
+            </div>
+            <div class="admin-stat villains">
+                <div class="admin-stat-value" id="regVillains">0</div>
+                <div class="admin-stat-label">🦹 VILLAINS</div>
+            </div>
+            <div class="admin-stat admins">
+                <div class="admin-stat-value" id="regAdmins">0</div>
+                <div class="admin-stat-label">👑 ADMINS</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LOGGED IN USERS -->
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: var(--success); font-family: Orbitron; font-size: 0.8rem; margin-bottom: 10px; letter-spacing: 2px;">
+            ✅ LOGGED IN USERS
+        </h3>
+        <div class="admin-stats">
+            <div class="admin-stat" style="background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.2);">
+                <div class="admin-stat-value" id="loginCivilians" style="color: var(--warning);">0</div>
+                <div class="admin-stat-label">👤 CIVILIANS</div>
+            </div>
+            <div class="admin-stat" style="background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.2);">
+                <div class="admin-stat-value" id="loginHeroes" style="color: var(--primary);">0</div>
+                <div class="admin-stat-label">🦸 HEROES</div>
+            </div>
+            <div class="admin-stat" style="background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.2);">
+                <div class="admin-stat-value" id="loginVillains" style="color: var(--danger);">0</div>
+                <div class="admin-stat-label">🦹 VILLAINS</div>
+            </div>
+            <div class="admin-stat" style="background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.2);">
+                <div class="admin-stat-value" id="loginAdmins" style="color: var(--secondary);">0</div>
+                <div class="admin-stat-label">👑 ADMINS</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ONLINE NOW -->
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: var(--warning); font-family: Orbitron; font-size: 0.8rem; margin-bottom: 10px; letter-spacing: 2px;">
+            🟢 ONLINE NOW
+        </h3>
+        <div class="admin-stats">
+            <div class="admin-stat" style="background: rgba(255,170,0,0.05); border-color: rgba(255,170,0,0.2);">
+                <div class="admin-stat-value" id="onlineCivilians" style="color: var(--warning);">0</div>
+                <div class="admin-stat-label">👤 CIVILIANS</div>
+            </div>
+            <div class="admin-stat" style="background: rgba(255,170,0,0.05); border-color: rgba(255,170,0,0.2);">
+                <div class="admin-stat-value" id="onlineHeroes" style="color: var(--primary);">0</div>
+                <div class="admin-stat-label">🦸 HEROES</div>
+            </div>
+            <div class="admin-stat" style="background: rgba(255,170,0,0.05); border-color: rgba(255,170,0,0.2);">
+                <div class="admin-stat-value" id="onlineVillains" style="color: var(--danger);">0</div>
+                <div class="admin-stat-label">🦹 VILLAINS</div>
+            </div>
+            <div class="admin-stat" style="background: rgba(255,170,0,0.05); border-color: rgba(255,170,0,0.2);">
+                <div class="admin-stat-value" id="onlineAdmins" style="color: var(--secondary);">0</div>
+                <div class="admin-stat-label">👑 ADMINS</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- TRANSACTION STATS -->
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: var(--secondary); font-family: Orbitron; font-size: 0.8rem; margin-bottom: 10px; letter-spacing: 2px;">
+            💰 TRANSACTION STATS
+        </h3>
+        <div class="admin-stats" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="admin-stat">
+                <div class="admin-stat-value" id="adminTransactions">0</div>
+                <div class="admin-stat-label">TRANSACTIONS</div>
+            </div>
+            <div class="admin-stat">
+                <div class="admin-stat-value" id="adminRevenue">0</div>
+                <div class="admin-stat-label">REVENUE</div>
+            </div>
+            <div class="admin-stat">
+                <div class="admin-stat-value" id="adminFailed">0</div>
+                <div class="admin-stat-label">FAILED</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+                <div class="panel">
+                    <h2>📜 RECENT ACTIVITY</h2>
+                    <div id="recentActivity">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIG
+        // ============================================
+        const API = 'http://localhost:8080/api';
+        
+        // ============================================
+        // STATE
+        // ============================================
+        let currentUser = null;
+        let currentRole = 'hero';
+        let currentTab = 'armory';
+        let selectedRole = 'civilian';
+        
+        // ============================================
+        // SCREEN SWITCHING
+        // ============================================
+        function showScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenName + 'Screen').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        
+        // ============================================
+        // INIT - Check auth on load
+        // ============================================
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('aegis_token');
+            const user = localStorage.getItem('aegis_user');
+            
+            if (token && user) {
+                // User is logged in
+                try {
+                    currentUser = JSON.parse(user);
+                    currentRole = currentUser.role;
+                    showScreen('dashboard');
+                    initDashboard();
+                } catch (e) {
+                    localStorage.clear();
+                    showScreen('login');
+                }
+            } else {
+                showScreen('login');
+            }
+        });
+        
+        // ============================================
+        // LOGIN
+        // ============================================
+        function fillDemo(username, password) {
+            document.getElementById('loginUsername').value = username;
+            document.getElementById('loginPassword').value = password;
+        }
+        
+        async function handleLogin() {
+            const btn = document.getElementById('loginBtn');
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                showLoginAlert('error', '❌ Please enter username and password');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ LOGGING IN...';
+            
+            try {
+                const res = await fetch(`${API}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    localStorage.setItem('aegis_token', data.data.token);
+                    localStorage.setItem('aegis_user', JSON.stringify(data.data.user));
+                    
+                    currentUser = data.data.user;
+                    currentRole = currentUser.role;
+                    
+                    showLoginAlert('success', '✅ Login successful!');
+                    
+                    setTimeout(() => {
+                        showScreen('dashboard');
+                        initDashboard();
+                    }, 500);
+                } else {
+                    showLoginAlert('error', '❌ ' + data.message);
+                    btn.disabled = false;
+                    btn.textContent = '⚡ LOGIN';
+                }
+            } catch (error) {
+                showLoginAlert('error', '❌ Cannot connect to server. Make sure backend is running.');
+                btn.disabled = false;
+                btn.textContent = '⚡ LOGIN';
+            }
+        }
+        
+        function showLoginAlert(type, message) {
+            const alert = document.getElementById('loginAlert');
+            alert.className = `alert ${type} show`;
+            alert.textContent = message;
+        }
+        
+        // ============================================
+        // REGISTER
+        // ============================================
+        function selectRole(role) {
+            selectedRole = role;
+            document.querySelectorAll('.role-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.role === role);
+            });
+        }
+        
+        async function handleRegister() {
+            const btn = document.getElementById('registerBtn');
+            const name = document.getElementById('regName').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            
+            if (!name || !username || !password) {
+                showRegisterAlert('error', '❌ All fields are required');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showRegisterAlert('error', '❌ Password must be at least 6 characters');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ CREATING...';
+            
+            try {
+                const res = await fetch(`${API}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        name,
+                        role: selectedRole
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    localStorage.setItem('aegis_token', data.data.token);
+                    localStorage.setItem('aegis_user', JSON.stringify(data.data.user));
+                    
+                    currentUser = data.data.user;
+                    currentRole = currentUser.role;
+                    
+                    showRegisterAlert('success', '✅ Account created!');
+                    
+                    setTimeout(() => {
+                        showScreen('dashboard');
+                        initDashboard();
+                    }, 500);
+                } else {
+                    showRegisterAlert('error', '❌ ' + data.message);
+                    btn.disabled = false;
+                    btn.textContent = '⚡ CREATE ACCOUNT';
+                }
+            } catch (error) {
+                showRegisterAlert('error', '❌ Cannot connect to server');
+                btn.disabled = false;
+                btn.textContent = '⚡ CREATE ACCOUNT';
+            }
+        }
+        
+        function showRegisterAlert(type, message) {
+            const alert = document.getElementById('registerAlert');
+            alert.className = `alert ${type} show`;
+            alert.textContent = message;
+        }
+        
+        // ============================================
+        // DASHBOARD INIT
+        // ============================================
+        async function initDashboard() {
+            document.getElementById('headerUsername').textContent = currentUser.username || currentUser.name;
+            document.getElementById('headerRole').textContent = currentUser.role.toUpperCase();
+            document.getElementById('headerRole').className = `role-badge ${currentUser.role}`;
+            
+            renderProfile(currentUser);
+            
+            if (currentRole === 'admin') {
+                document.getElementById('regularView').style.display = 'none';
+                document.getElementById('adminView').classList.add('active');
+                loadAdminDashboard();
+            } else {
+                document.getElementById('regularView').style.display = 'block';
+                document.getElementById('adminView').classList.remove('active');
+                loadMarketplace();
+            }
+            
+            loadRecentActivity(currentUser.id);
+        }
+        
+        function renderProfile(user) {
+            document.getElementById('profileName').textContent = user.name || 'Unknown';
+            document.getElementById('profileRole').textContent = (user.role || 'hero').toUpperCase();
+            document.getElementById('profileRole').className = `role-badge ${user.role || 'hero'}`;
+            document.getElementById('profileCredits').textContent = user.credits || 0;
+            document.getElementById('profileBio').textContent = user.bioCapacityMax || 0;
+            
+            const canBuy = user.role !== 'admin';
+            const canSell = user.role === 'hero' || user.role === 'villain';
+            const canDash = user.role === 'admin';
+            
+            updatePermission('permBuy', canBuy);
+            updatePermission('permSell', canSell);
+            updatePermission('permDash', canDash);
+            updatePermission('permTrans', canDash);
+        }
+        
+        function updatePermission(id, allowed) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = allowed ? '✅ YES' : '❌ NO';
+            el.parentElement.className = `permission-item ${allowed ? 'allowed' : 'denied'}`;
+        }
+        
+        // ============================================
+        // MARKETPLACE
+        // ============================================
+        async function loadMarketplace() {
+            const content = document.getElementById('marketplaceContent');
+            content.innerHTML = '<div class="loading">Loading gear...</div>';
+            
+            try {
+                if (currentTab === 'inventory') {
+                    const res = await fetch(`${API}/marketplace/inventory/${currentUser.id}`);
+                    const data = await res.json();
+                    renderInventory(data.data?.inventory || []);
+                } else {
+                    const res = await fetch(`${API}/gear`);
+                    const data = await res.json();
+                    let catalog = data.data?.catalog || data.data || [];
+                    
+                    if (currentTab === 'armory') {
+                        catalog = catalog.filter(item => item.source === 'armory');
+                    } else if (currentTab === 'black-market') {
+                        catalog = catalog.filter(item => item.source === 'black-market');
+                    }
+                    
+                    renderGear(catalog);
+                }
+            } catch (error) {
+                content.innerHTML = `<div class="loading">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function renderGear(gear) {
+            const content = document.getElementById('marketplaceContent');
+            
+            if (!gear || gear.length === 0) {
+                content.innerHTML = '<div class="loading">No gear available</div>';
+                return;
+            }
+            
+            const canBuy = currentRole !== 'admin';
+            
+            content.innerHTML = gear.map(item => `
+                <div class="gear-card">
+                    <div class="gear-name">${item.name}</div>
+                    <div class="gear-meta">${(item.slot || '').toUpperCase()} • ${(item.source || '').toUpperCase()}</div>
+                    <div class="gear-stats">
+                        <span class="stat-bio">⚡ ${item.bioCapacity || 0}</span>
+                        <span>🔄 ${item.recoveryRate || 0}</span>
+                        <span class="stat-risk">⚠️ ${item.riskModifier || 0}</span>
+                    </div>
+                    <div class="gear-price">
+                        <span class="price">💰 ${item.price}</span>
+                        <button 
+                            class="btn ${canBuy ? 'btn-primary' : 'btn-danger'}" 
+                            ${!canBuy ? 'disabled' : ''}
+                            onclick="purchaseGear('${item.id}')">
+                            ${canBuy ? 'BUY' : 'ADMIN CANNOT BUY'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function renderInventory(inventory) {
+            const content = document.getElementById('marketplaceContent');
+            
+            if (!inventory || inventory.length === 0) {
+                content.innerHTML = '<div class="loading">No items in inventory</div>';
+                return;
+            }
+            
+            const canSell = currentRole === 'hero' || currentRole === 'villain';
+            
+            content.innerHTML = inventory.map(item => `
+                <div class="gear-card">
+                    <div class="gear-name">${item.name}</div>
+                    <div class="gear-meta">${(item.slot || '').toUpperCase()} ${item.equipped ? '• ✅ EQUIPPED' : ''}</div>
+                    <div class="gear-stats">
+                        <span class="stat-bio">⚡ ${item.bioCapacity || 0}</span>
+                        <span>🔄 ${item.recoveryRate || 0}</span>
+                        <span class="stat-risk">⚠️ ${item.riskModifier || 0}</span>
+                    </div>
+                    <div class="gear-price">
+                        <span class="price">💰 ${item.price}</span>
+                        <button 
+                            class="btn ${canSell ? 'btn-success' : 'btn-danger'}" 
+                            ${!canSell ? 'disabled' : ''}
+                            onclick="sellGear(${item.inventoryId})">
+                            ${canSell ? 'SELL (₵' + Math.floor(item.price * 0.5) + ')' : 'CANNOT SELL'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function purchaseGear(gearId) {
+            if (currentRole === 'admin') {
+                showDashAlert('error', '❌ Admins cannot purchase gear!');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API}/marketplace/purchase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ combatantId: currentUser.id, gearId })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showDashAlert('success', `✅ ${data.message} New balance: ₵${data.data.newBalance}`);
+                    currentUser.credits = data.data.newBalance;
+                    localStorage.setItem('aegis_user', JSON.stringify(currentUser));
+                    renderProfile(currentUser);
+                    setTimeout(() => loadMarketplace(), 500);
+                } else {
+                    showDashAlert('error', `❌ ${data.message}`);
+                }
+            } catch (error) {
+                showDashAlert('error', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        async function sellGear(inventoryId) {
+            if (currentRole === 'civilian') {
+                showDashAlert('error', '❌ Civilians cannot sell gear!');
+                return;
+            }
+            
+            if (currentRole === 'admin') {
+                showDashAlert('error', '❌ Admins cannot sell gear!');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API}/marketplace/sell`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ combatantId: currentUser.id, inventoryId })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showDashAlert('success', `✅ Sold ${data.data.gearName} for ₵${data.data.sellPrice}`);
+                    currentUser.credits = data.data.newBalance;
+                    localStorage.setItem('aegis_user', JSON.stringify(currentUser));
+                    renderProfile(currentUser);
+                    setTimeout(() => loadMarketplace(), 500);
+                } else {
+                    showDashAlert('error', `❌ ${data.message}`);
+                }
+            } catch (error) {
+                showDashAlert('error', `❌ Error: ${error.message}`);
+            }
+        }
+        
+        // ============================================
+        // ADMIN DASHBOARD
+        // ============================================
+        async function loadAdminDashboard() {
+    try {
+        const res = await fetch(`${API}/admin/dashboard?adminId=${currentUser.id}`);
+        const data = await res.json();
+        
+        if (data.success) {
+            const d = data.data;
+            
+            // REGISTERED
+            document.getElementById('regCivilians').textContent = d.registered.civilians;
+            document.getElementById('regHeroes').textContent = d.registered.heroes;
+            document.getElementById('regVillains').textContent = d.registered.villains;
+            document.getElementById('regAdmins').textContent = d.registered.admins;
+            
+            // LOGGED IN
+            document.getElementById('loginCivilians').textContent = d.logged_in.civilians;
+            document.getElementById('loginHeroes').textContent = d.logged_in.heroes;
+            document.getElementById('loginVillains').textContent = d.logged_in.villains;
+            document.getElementById('loginAdmins').textContent = d.logged_in.admins;
+            
+            // ONLINE
+            document.getElementById('onlineCivilians').textContent = d.online.civilians;
+            document.getElementById('onlineHeroes').textContent = d.online.heroes;
+            document.getElementById('onlineVillains').textContent = d.online.villains;
+            document.getElementById('onlineAdmins').textContent = d.online.admins;
+            
+            // TRANSACTIONS
+            document.getElementById('adminTransactions').textContent = d.transactions.total;
+            document.getElementById('adminRevenue').textContent = '₵' + d.transactions.total_revenue;
+            document.getElementById('adminFailed').textContent = d.transactions.failed;
+            
+            // RECENT TRANSACTIONS TABLE
+            renderTransactions(d.recent_transactions);
+            
+            // RECENT LOGINS TABLE
+            if (d.recent_logins) {
+                renderRecentLogins(d.recent_logins);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load admin dashboard:', error);
+    }
+}
+
+function renderRecentLogins(logins) {
+    const activity = document.getElementById('recentActivity');
+    
+    if (!logins || logins.length === 0) return;
+    
+    let html = '<h3 style="color: var(--primary); margin: 20px 0 10px; font-size: 0.8rem;">🕐 RECENT LOGINS</h3>';
+    html += '<table class="transaction-table">';
+    html += '<thead><tr><th>USER</th><th>ROLE</th><th>TIME</th></tr></thead><tbody>';
+    
+    logins.forEach(login => {
+        html += `
+            <tr>
+                <td>${login.username}</td>
+                <td><span class="badge-role ${login.role}">${login.role}</span></td>
+                <td>${new Date(login.login_at).toLocaleString()}</td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table>';
+    
+    activity.innerHTML += html;
+}
+        
+        // ============================================
+        // RECENT ACTIVITY
+        // ============================================
+        async function loadRecentActivity(userId) {
+            const activity = document.getElementById('recentActivity');
+            
+            if (currentRole === 'admin') {
+                loadAdminDashboard();
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API}/analytics/${userId}/summary`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    const s = data.data.summary;
+                    activity.innerHTML = `
+                        <div class="stat" style="margin-bottom:10px;">
+                            <div class="stat-value">${s.total_credits_earned}</div>
+                            <div class="stat-label">TOTAL EARNED</div>
+                        </div>
+                        <div class="stat" style="margin-bottom:10px;">
+                            <div class="stat-value">${s.total_credits_spent}</div>
+                            <div class="stat-label">TOTAL SPENT</div>
+                        </div>
+                        <div class="stat" style="margin-bottom:10px;">
+                            <div class="stat-value">${s.total_battles_won}</div>
+                            <div class="stat-label">BATTLES WON</div>
+                        </div>
+                        <div class="stat" style="margin-bottom:10px;">
+                            <div class="stat-value">${s.total_missions_completed}</div>
+                            <div class="stat-label">MISSIONS DONE</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${s.total_gear_owned}</div>
+                            <div class="stat-label">GEAR OWNED</div>
+                        </div>
+                    `;
+                } else {
+                    activity.innerHTML = '<div class="loading">No data available</div>';
+                }
+            } catch (error) {
+                activity.innerHTML = `<div class="loading">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // ============================================
+        // TAB SWITCHING
+        // ============================================
+        function showTab(tab, btn) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadMarketplace();
+        }
+        
+        // ============================================
+        // ALERTS
+        // ============================================
+        function showDashAlert(type, message) {
+            const alert = document.getElementById('dashAlert');
+            alert.className = `alert ${type} show`;
+            alert.textContent = message;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 4000);
+        }
+        
+        // ============================================
+        // LOGOUT
+        // ============================================
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            
+            try {
+                const token = localStorage.getItem('aegis_token');
+                await fetch(`${API}/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            } catch (e) {}
+            
+            localStorage.removeItem('aegis_token');
+            localStorage.removeItem('aegis_user');
+            currentUser = null;
+            
+            showScreen('login');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginBtn').textContent = '⚡ LOGIN';
+        }
+    </script>
+</body>
 </html>

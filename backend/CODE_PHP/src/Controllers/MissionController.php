@@ -15,20 +15,22 @@ class MissionController
     }
     
     /**
+     * Helper: Get query parameter (Slim 4 compatible)
+     */
+    private function getQuery($request, string $key, $default = null)
+    {
+        $params = $request->getQueryParams();
+        return $params[$key] ?? $default;
+    }
+    
+    /**
      * GET /api/missions
-     * Get all available missions
      */
     public function getMissions($request, $response, $args)
     {
         try {
             $stmt = $this->db->prepare("
-                SELECT 
-                    id,
-                    name,
-                    description,
-                    reward,
-                    difficulty,
-                    required_clearance
+                SELECT id, name, description, reward, difficulty, required_clearance
                 FROM missions
                 ORDER BY required_clearance, reward
             ");
@@ -44,7 +46,6 @@ class MissionController
     
     /**
      * GET /api/missions/{id}
-     * Get a single mission by ID
      */
     public function getMission($request, $response, $args)
     {
@@ -56,15 +57,8 @@ class MissionController
         
         try {
             $stmt = $this->db->prepare("
-                SELECT 
-                    id,
-                    name,
-                    description,
-                    reward,
-                    difficulty,
-                    required_clearance
-                FROM missions
-                WHERE id = ?
+                SELECT id, name, description, reward, difficulty, required_clearance
+                FROM missions WHERE id = ?
             ");
             $stmt->execute([$id]);
             $mission = $stmt->fetch();
@@ -82,7 +76,6 @@ class MissionController
     
     /**
      * POST /api/missions/complete
-     * Complete a mission and earn credits
      */
     public function completeMission($request, $response, $args)
     {
@@ -92,18 +85,14 @@ class MissionController
             $body = json_decode($request->getBody()->getContents(), true);
             
             if (!$body || !isset($body['combatantId']) || !isset($body['missionId'])) {
-                return $this->jsonResponse($response, 400, false, 'Invalid request: combatantId and missionId required');
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 400, false, 'combatantId and missionId required');
             }
             
             $combatantId = (int)$body['combatantId'];
             $missionId = (int)$body['missionId'];
             
-            // Get combatant details with lock
-            $stmt = $this->db->prepare("
-                SELECT id, name, credits, clearance_level 
-                FROM combatants 
-                WHERE id = ? FOR UPDATE
-            ");
+            $stmt = $this->db->prepare("SELECT id, name, credits, clearance_level FROM combatants WHERE id = ? FOR UPDATE");
             $stmt->execute([$combatantId]);
             $combatant = $stmt->fetch();
             
@@ -112,12 +101,7 @@ class MissionController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
-            // Get mission details
-            $stmt = $this->db->prepare("
-                SELECT id, name, reward, difficulty, required_clearance
-                FROM missions
-                WHERE id = ?
-            ");
+            $stmt = $this->db->prepare("SELECT id, name, reward, difficulty, required_clearance FROM missions WHERE id = ?");
             $stmt->execute([$missionId]);
             $mission = $stmt->fetch();
             
@@ -126,76 +110,44 @@ class MissionController
                 return $this->jsonResponse($response, 404, false, 'Mission not found');
             }
             
-            // Check if combatant already completed this mission
-            $stmt = $this->db->prepare("
-                SELECT id FROM mission_completions
-                WHERE combatant_id = ? AND mission_id = ?
-            ");
+            // Check if already completed
+            $stmt = $this->db->prepare("SELECT id FROM mission_completions WHERE combatant_id = ? AND mission_id = ?");
             $stmt->execute([$combatantId, $missionId]);
             if ($stmt->fetch()) {
                 $this->db->rollBack();
                 return $this->jsonResponse($response, 400, false, 'Mission already completed');
             }
             
-            // Check clearance level
+            // Check clearance
             if ($combatant['clearance_level'] < $mission['required_clearance']) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 403, false, 'Insufficient clearance for this mission', [
-                    'required' => $mission['required_clearance'],
-                    'current' => $combatant['clearance_level']
-                ]);
+                return $this->jsonResponse($response, 403, false, 'Insufficient clearance level');
             }
             
-            // Award credits
             $newBalance = $combatant['credits'] + $mission['reward'];
-            $stmt = $this->db->prepare("
-                UPDATE combatants 
-                SET credits = ? 
-                WHERE id = ?
-            ");
+            
+            // Award credits
+            $stmt = $this->db->prepare("UPDATE combatants SET credits = ? WHERE id = ?");
             $stmt->execute([$newBalance, $combatantId]);
             
-            // Record mission completion
-            $stmt = $this->db->prepare("
-                INSERT INTO mission_completions (combatant_id, mission_id, completed_at)
-                VALUES (?, ?, NOW())
-            ");
+            // Record completion
+            $stmt = $this->db->prepare("INSERT INTO mission_completions (combatant_id, mission_id, completed_at) VALUES (?, ?, NOW())");
             $stmt->execute([$combatantId, $missionId]);
             
-            // Update combatant stats
+            // Update stats
             $stmt = $this->db->prepare("
                 UPDATE combatant_stats 
-                SET 
-                    total_missions_completed = total_missions_completed + 1,
+                SET total_missions_completed = total_missions_completed + 1,
                     total_credits_earned = total_credits_earned + ?
                 WHERE combatant_id = ?
             ");
             $stmt->execute([$mission['reward'], $combatantId]);
             
-            // Log activity
-            $stmt = $this->db->prepare("
-                INSERT INTO activity_log (combatant_id, activity_type, details, credits_change, logged_at)
-                VALUES (?, 'mission', ?, ?, NOW())
-            ");
-            $stmt->execute([
-                $combatantId,
-                json_encode(['mission_id' => $missionId, 'mission_name' => $mission['name']]),
-                $mission['reward']
-            ]);
-            
             $this->db->commit();
             
-            return $this->jsonResponse($response, 200, true, 'Mission completed successfully!', [
-                'mission' => [
-                    'id' => $mission['id'],
-                    'name' => $mission['name'],
-                    'reward' => $mission['reward']
-                ],
-                'combatant' => [
-                    'id' => $combatant['id'],
-                    'name' => $combatant['name'],
-                    'new_balance' => $newBalance
-                ]
+            return $this->jsonResponse($response, 200, true, 'Mission completed!', [
+                'mission' => $mission,
+                'newBalance' => $newBalance
             ]);
             
         } catch (\Exception $e) {
@@ -206,31 +158,26 @@ class MissionController
     
     /**
      * GET /api/missions/leaderboard
-     * Get mission completion leaderboard
      */
     public function getLeaderboard($request, $response, $args)
     {
         try {
             $stmt = $this->db->prepare("
                 SELECT 
-                    c.id,
-                    c.name,
-                    c.faction,
+                    c.id, c.name, c.faction, c.role,
                     COUNT(mc.id) as missions_completed,
-                    SUM(m.reward) as total_rewards_earned
+                    COALESCE(SUM(m.reward), 0) as total_rewards
                 FROM combatants c
                 LEFT JOIN mission_completions mc ON c.id = mc.combatant_id
                 LEFT JOIN missions m ON mc.mission_id = m.id
-                GROUP BY c.id, c.name, c.faction
-                ORDER BY missions_completed DESC, total_rewards_earned DESC
+                GROUP BY c.id, c.name, c.faction, c.role
+                ORDER BY missions_completed DESC, total_rewards DESC
                 LIMIT 10
             ");
             $stmt->execute();
             $leaderboard = $stmt->fetchAll();
             
-            return $this->jsonResponse($response, 200, true, 'Mission leaderboard retrieved', [
-                'leaderboard' => $leaderboard
-            ]);
+            return $this->jsonResponse($response, 200, true, 'Leaderboard retrieved', ['leaderboard' => $leaderboard]);
             
         } catch (\Exception $e) {
             return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
@@ -238,8 +185,7 @@ class MissionController
     }
     
     /**
-     * GET /api/missions/completed/{combatantId}
-     * Get completed missions for a combatant
+     * GET /api/missions/completed/{id}
      */
     public function getCompletedMissions($request, $response, $args)
     {
@@ -252,10 +198,7 @@ class MissionController
         try {
             $stmt = $this->db->prepare("
                 SELECT 
-                    m.id,
-                    m.name,
-                    m.reward,
-                    m.difficulty,
+                    m.id, m.name, m.reward, m.difficulty,
                     mc.completed_at
                 FROM mission_completions mc
                 JOIN missions m ON mc.mission_id = m.id

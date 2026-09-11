@@ -7,69 +7,108 @@ echo    AEGIS AND ANARCHY - FULL SYSTEM
 echo ========================================
 echo.
 
-:: Set project root
-set PROJECT_ROOT=%~dp0
-cd /d "%PROJECT_ROOT%"
+:: ============================================
+:: SET YOUR PATHS HERE
+:: ============================================
+set "BACKEND_PATH=C:\Users\ASUS\OneDrive\Desktop\project1\Vantablack\BACKEND\CODE_PHP"
+set "FRONTEND_PATH=C:\Users\ASUS\OneDrive\Desktop\project1\Vantablack\FRONT_END"
 
-:: Find backend folder
-set BACKEND_DIR=
-if exist "backend\CODE_PHP" set BACKEND_DIR=backend\CODE_PHP
-if exist "BACKEND\CODE_PHP" set BACKEND_DIR=BACKEND\CODE_PHP
-if exist "CODE_PHP" set BACKEND_DIR=CODE_PHP
-
-:: Find frontend folder
-set FRONTEND_DIR=
-if exist "frontend\package.json" set FRONTEND_DIR=frontend
-if exist "FRONT_END\package.json" set FRONTEND_DIR=FRONT_END
-if exist "frontend\index.html" if "%FRONTEND_DIR%"=="" set FRONTEND_DIR=frontend
-if exist "FRONT_END\index.html" if "%FRONTEND_DIR%"=="" set FRONTEND_DIR=FRONT_END
-
-echo [INFO] Project Root: %PROJECT_ROOT%
-echo [INFO] Backend Dir:  %BACKEND_DIR%
-echo [INFO] Frontend Dir: %FRONTEND_DIR%
+:: ============================================
+:: CHECK IF PATHS EXIST
+:: ============================================
+echo [CHECK] Verifying directories...
 echo.
 
-if "%BACKEND_DIR%"=="" (
-    echo [ERROR] Backend not found!
-    echo Looked in: backend\CODE_PHP, BACKEND\CODE_PHP, CODE_PHP
+if not exist "%BACKEND_PATH%" (
+    echo [ERROR] Backend not found at:
+    echo   %BACKEND_PATH%
+    echo.
+    echo Please check your BACKEND path.
     pause
     exit /b 1
 )
+echo [OK] Backend path found
+echo      %BACKEND_PATH%
 
-if "%FRONTEND_DIR%"=="" (
-    echo [ERROR] Frontend not found!
-    echo Looked in: frontend, FRONT_END
+if not exist "%FRONTEND_PATH%" (
+    echo [ERROR] Frontend not found at:
+    echo   %FRONTEND_PATH%
+    echo.
+    echo Please check your FRONT_END path.
     pause
     exit /b 1
 )
+echo [OK] Frontend path found
+echo      %FRONTEND_PATH%
+echo.
 
-:: Start Backend
-echo [INFO] Starting Backend Server...
-start "Aegis Backend" cmd /k "cd /d %PROJECT_ROOT%%BACKEND_DIR% && php -S localhost:8080 -t public"
+:: ============================================
+:: CHECK PACKAGE.JSON
+:: ============================================
+if not exist "%FRONTEND_PATH%\package.json" (
+    echo [WARNING] package.json not found in FRONT_END
+    echo [INFO] Frontend might need: npm install
+    echo.
+)
 
-:: Wait for backend
-timeout /t 3 /nobreak >nul
-
-:: Start Frontend
-echo [INFO] Starting Frontend Server...
-start "Aegis Frontend" cmd /k "cd /d %PROJECT_ROOT%%FRONTEND_DIR% && npm run dev"
-
-:: Wait for frontend
-timeout /t 5 /nobreak >nul
-
+:: ============================================
+:: START BACKEND
+:: ============================================
 echo ========================================
-echo [SUCCESS] Both servers are starting!
+echo [STARTING] Backend Server
+echo ========================================
+echo.
+echo URL: http://localhost:8080
+echo API: http://localhost:8080/api
+echo.
+
+start "Aegis Backend" cmd /k "cd /d "%BACKEND_PATH%" && echo Starting Backend... && php -S localhost:8080 -t public"
+
+:: Wait for backend to start
+echo [WAIT] Starting backend...
+timeout /t 4 /nobreak >nul
+
+:: ============================================
+:: START FRONTEND
+:: ============================================
+echo.
+echo ========================================
+echo [STARTING] Frontend Server (Vite)
+echo ========================================
+echo.
+echo URL: http://localhost:5173
+echo.
+
+start "Aegis Frontend" cmd /k "cd /d "%FRONTEND_PATH%" && echo Starting Vite... && npm run dev"
+
+:: Wait for frontend to start
+echo [WAIT] Starting frontend...
+timeout /t 4 /nobreak >nul
+
+:: ============================================
+:: OPEN BROWSER
+:: ============================================
+echo.
+echo [INFO] Opening browser...
+start http://localhost:5173
+
+:: ============================================
+:: SUCCESS MESSAGE
+:: ============================================
+echo.
+echo ========================================
+echo    [SUCCESS] BOTH SERVERS RUNNING!
 echo ========================================
 echo.
 echo Backend:  http://localhost:8080
 echo Frontend: http://localhost:5173
 echo.
-echo Opening browser...
-timeout /t 2 /nobreak >nul
-start http://localhost:5173
-
+echo API Test: http://localhost:8080/api/health
 echo.
-echo Close each terminal to stop the servers.
+echo ========================================
+echo To stop servers:
+echo   Close the two terminal windows
 echo ========================================
 echo.
-pause
+echo Press any key to close this window...
+pause >nul

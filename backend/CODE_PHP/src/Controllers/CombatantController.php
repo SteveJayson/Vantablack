@@ -18,12 +18,21 @@ class CombatantController
     }
     
     /**
+     * Helper: Get query parameter (Slim 4 compatible)
+     */
+    private function getQuery($request, string $key, $default = null)
+    {
+        $params = $request->getQueryParams();
+        return $params[$key] ?? $default;
+    }
+    
+    /**
      * GET /api/combatants
      */
     public function getAllCombatants($request, $response, $args)
     {
         try {
-            $role = $request->getQueryParam('role');
+            $role = $this->getQuery($request, 'role');
             
             $query = "SELECT 
                 id, name, bio_capacity_max as bioCapacityMax,
@@ -79,7 +88,7 @@ class CombatantController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
-            // Only load loadout for heroes/villains
+            // Load loadout for heroes/villains
             if (in_array($combatant['role'], ['hero', 'villain'])) {
                 $loadout = $this->getLoadoutDetails($id);
                 $combatant['loadout'] = $loadout;
