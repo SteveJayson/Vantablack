@@ -16,52 +16,55 @@ class GearController
     
     /**
      * GET /api/gear
-     * Get gear catalog with optional filters
      */
     public function getCatalog($request, $response, $args)
     {
         try {
+            // ✅ FIXED: Use getQueryParams() for Slim 4
+            $queryParams = $request->getQueryParams();
+            
             $query = "SELECT 
-                id,
-                slot,
-                source,
-                name,
-                price,
+                id, slot, source, name, price,
                 bio_capacity as bioCapacity,
                 recovery_rate as recoveryRate,
                 risk_modifier as riskModifier,
-                clearance_required as clearanceRequired
+                clearance_required as clearanceRequired,
+                tier, is_legendary as isLegendary
             FROM gear_items";
             
             $params = [];
             $conditions = [];
             
-            // Apply filters
-            if ($request->getQueryParam('slot')) {
+            if (isset($queryParams['slot'])) {
                 $conditions[] = "slot = ?";
-                $params[] = $request->getQueryParam('slot');
+                $params[] = $queryParams['slot'];
             }
             
-            if ($request->getQueryParam('source')) {
+            if (isset($queryParams['source'])) {
                 $conditions[] = "source = ?";
-                $params[] = $request->getQueryParam('source');
+                $params[] = $queryParams['source'];
             }
             
-            if ($request->getQueryParam('minPrice')) {
+            if (isset($queryParams['minPrice'])) {
                 $conditions[] = "price >= ?";
-                $params[] = (int)$request->getQueryParam('minPrice');
+                $params[] = (int)$queryParams['minPrice'];
             }
             
-            if ($request->getQueryParam('maxPrice')) {
+            if (isset($queryParams['maxPrice'])) {
                 $conditions[] = "price <= ?";
-                $params[] = (int)$request->getQueryParam('maxPrice');
+                $params[] = (int)$queryParams['maxPrice'];
+            }
+            
+            if (isset($queryParams['tier'])) {
+                $conditions[] = "tier = ?";
+                $params[] = (int)$queryParams['tier'];
             }
             
             if (!empty($conditions)) {
                 $query .= " WHERE " . implode(" AND ", $conditions);
             }
             
-            $query .= " ORDER BY price ASC";
+            $query .= " ORDER BY tier ASC, price ASC";
             
             $stmt = $this->db->prepare($query);
             $stmt->execute($params);
@@ -76,7 +79,6 @@ class GearController
     
     /**
      * GET /api/gear/{id}
-     * Get single gear item
      */
     public function getGearItem($request, $response, $args)
     {
@@ -89,17 +91,13 @@ class GearController
         try {
             $stmt = $this->db->prepare("
                 SELECT 
-                    id,
-                    slot,
-                    source,
-                    name,
-                    price,
+                    id, slot, source, name, price,
                     bio_capacity as bioCapacity,
                     recovery_rate as recoveryRate,
                     risk_modifier as riskModifier,
-                    clearance_required as clearanceRequired
-                FROM gear_items
-                WHERE id = ?
+                    clearance_required as clearanceRequired,
+                    tier, is_legendary as isLegendary
+                FROM gear_items WHERE id = ?
             ");
             $stmt->execute([$id]);
             $gear = $stmt->fetch();
@@ -115,18 +113,9 @@ class GearController
         }
     }
     
-    /**
-     * JSON response helper
-     */
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
     {
-        $payload = [
-            'status' => $status,
-            'success' => $success,
-            'message' => $message,
-            'data' => $data
-        ];
-        
+        $payload = ['status' => $status, 'success' => $success, 'message' => $message, 'data' => $data];
         $response->getBody()->write(json_encode($payload));
         return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
     }
