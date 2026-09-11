@@ -19,25 +19,28 @@ class CombatantController
     
     /**
      * GET /api/combatants
-     * Get all combatants
      */
     public function getAllCombatants($request, $response, $args)
     {
         try {
-            $stmt = $this->db->prepare("
-                SELECT 
-                    id,
-                    name,
-                    bio_capacity_max as bioCapacityMax,
-                    base_recovery as baseRecovery,
-                    base_risk as baseRisk,
-                    credits,
-                    faction,
-                    clearance_level as clearanceLevel
-                FROM combatants
-                ORDER BY name
-            ");
-            $stmt->execute();
+            $role = $request->getQueryParam('role');
+            
+            $query = "SELECT 
+                id, name, bio_capacity_max as bioCapacityMax,
+                base_recovery as baseRecovery, base_risk as baseRisk,
+                credits, faction, role, clearance_level as clearanceLevel
+            FROM combatants";
+            
+            $params = [];
+            if ($role) {
+                $query .= " WHERE role = ?";
+                $params[] = $role;
+            }
+            
+            $query .= " ORDER BY role, name";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
             $combatants = $stmt->fetchAll();
             
             return $this->jsonResponse($response, 200, true, 'Combatants retrieved', ['combatants' => $combatants]);
@@ -48,7 +51,6 @@ class CombatantController
     
     /**
      * GET /api/combatants/{id}
-     * Get single combatant with loadout
      */
     public function getCombatant($request, $response, $args)
     {
@@ -59,16 +61,13 @@ class CombatantController
         }
         
         try {
-            // Get combatant with loadout
             $stmt = $this->db->prepare("
                 SELECT 
-                    c.id,
-                    c.name,
+                    c.id, c.name,
                     c.bio_capacity_max as bioCapacityMax,
                     c.base_recovery as baseRecovery,
                     c.base_risk as baseRisk,
-                    c.credits,
-                    c.faction,
+                    c.credits, c.faction, c.role,
                     c.clearance_level as clearanceLevel
                 FROM combatants c
                 WHERE c.id = ?
@@ -80,14 +79,15 @@ class CombatantController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
-            // Get full gear details for loadout
-            $loadout = $this->getLoadoutDetails($id);
-            $combatant['loadout'] = $loadout;
-            
-            // Calculate loadout stats if loadout exists
-            if (!empty($loadout)) {
-                $stats = $this->engine->calculate($combatant, $loadout);
-                $combatant['loadoutStats'] = $stats;
+            // Only load loadout for heroes/villains
+            if (in_array($combatant['role'], ['hero', 'villain'])) {
+                $loadout = $this->getLoadoutDetails($id);
+                $combatant['loadout'] = $loadout;
+                
+                if (!empty($loadout)) {
+                    $stats = $this->engine->calculate($combatant, $loadout);
+                    $combatant['loadoutStats'] = $stats;
+                }
             }
             
             return $this->jsonResponse($response, 200, true, 'Combatant found', ['combatant' => $combatant]);
@@ -97,27 +97,16 @@ class CombatantController
         }
     }
     
-    /**
-     * Get loadout details
-     */
     private function getLoadoutDetails(int $combatantId): array
     {
         $stmt = $this->db->prepare("
-            SELECT 
-                l.helmet_id,
-                l.core_id,
-                l.dampener_id,
-                l.gauntlets_id,
-                l.battery_id
-            FROM loadouts l
-            WHERE l.combatant_id = ?
+            SELECT helmet_id, core_id, dampener_id, gauntlets_id, battery_id
+            FROM loadouts WHERE combatant_id = ?
         ");
         $stmt->execute([$combatantId]);
         $loadout = $stmt->fetch();
         
-        if (!$loadout) {
-            return [];
-        }
+        if (!$loadout) return [];
         
         $result = [];
         $slots = ['helmet', 'core', 'dampener', 'gauntlets', 'battery'];
@@ -126,18 +115,12 @@ class CombatantController
             $gearId = $loadout[$slot . '_id'];
             if ($gearId) {
                 $gearStmt = $this->db->prepare("
-                    SELECT 
-                        id,
-                        slot,
-                        source,
-                        name,
-                        price,
+                    SELECT id, slot, source, name, price,
                         bio_capacity as bioCapacity,
                         recovery_rate as recoveryRate,
                         risk_modifier as riskModifier,
                         clearance_required as clearanceRequired
-                    FROM gear_items
-                    WHERE id = ?
+                    FROM gear_items WHERE id = ?
                 ");
                 $gearStmt->execute([$gearId]);
                 $result[$slot] = $gearStmt->fetch();
@@ -149,9 +132,6 @@ class CombatantController
         return $result;
     }
     
-    /**
-     * JSON response helper
-     */
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
     {
         $payload = [

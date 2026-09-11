@@ -77,6 +77,14 @@ $app->post('/api/missions/complete', \Aegis\Controllers\MissionController::class
 $app->get('/api/missions', \Aegis\Controllers\MissionController::class . ':getMissions');
 $app->get('/api/missions/{id}', \Aegis\Controllers\MissionController::class . ':getMission');
 
+// ---------- ADMIN ROUTES ----------
+$app->get('/api/admin/dashboard', \Aegis\Controllers\AdminController::class . ':getDashboard');
+$app->get('/api/admin/transactions', \Aegis\Controllers\AdminController::class . ':getTransactions');
+$app->get('/api/admin/users', \Aegis\Controllers\AdminController::class . ':getUsers');
+$app->get('/api/admin/users/{id}/transactions', \Aegis\Controllers\AdminController::class . ':getUserTransactions');
+
+
+
 // ---------- HEALTH CHECK ROUTE ----------
 $app->get('/api/health', function ($request, $response, $args) {
     $payload = [
