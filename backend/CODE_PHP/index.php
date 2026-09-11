@@ -18,9 +18,19 @@ define('DB_PASS', '');
 // 3RD PARTY API CONFIGURATIONS
 // ============================================
 
-// OpenWeatherMap - Get free key at: https://openweathermap.org/api
-define('OPENWEATHER_API_KEY', 'YOUR_API_KEY_HERE'); // Replace with real key
+// 1. OpenWeatherMap
+define('OPENWEATHER_API_KEY', 'YOUR_OPENWEATHER_API_KEY_HERE');
 define('OPENWEATHER_BASE_URL', 'https://api.openweathermap.org/data/2.5');
+
+// 2. ExchangeRate API
+define('EXCHANGERATE_API_KEY', 'YOUR_EXCHANGERATE_API_KEY_HERE');
+define('EXCHANGERATE_BASE_URL', 'https://v6.exchangerate-api.com/v6');
+
+// 3. IP-API (free)
+define('IPAPI_BASE_URL', 'http://ip-api.com/json');
+
+// 4. QR Server (free)
+define('QRSERVER_BASE_URL', 'https://api.qrserver.com/v1');
 
 $app = AppFactory::create();
 
@@ -82,11 +92,26 @@ $app->get('/api/admin/users', \Aegis\Controllers\AdminController::class . ':getU
 $app->get('/api/admin/users/{id}/transactions', \Aegis\Controllers\AdminController::class . ':getUserTransactions');
 
 // ============================================
-// 3RD PARTY API ROUTES (WEATHER)
+// 3RD PARTY API ROUTES
 // ============================================
+
+// 1. Weather API
 $app->get('/api/weather/current', \Aegis\Controllers\WeatherController::class . ':getCurrent');
 $app->get('/api/weather/forecast', \Aegis\Controllers\WeatherController::class . ':getForecast');
 $app->post('/api/weather/combat-impact', \Aegis\Controllers\WeatherController::class . ':getCombatImpact');
+
+// 2. Currency/Exchange Rate API
+$app->get('/api/currency/rates', \Aegis\Controllers\CurrencyController::class . ':getRates');
+$app->get('/api/currency/convert', \Aegis\Controllers\CurrencyController::class . ':convert');
+$app->get('/api/currency/gear-price/{id}', \Aegis\Controllers\CurrencyController::class . ':getGearPriceInCurrency');
+
+// 3. Geolocation API
+$app->get('/api/geo/lookup', \Aegis\Controllers\GeoController::class . ':lookupIp');
+$app->post('/api/geo/combatant-location', \Aegis\Controllers\GeoController::class . ':getCombatantLocation');
+
+// 4. QR Code API
+$app->get('/api/qr/gear/{id}', \Aegis\Controllers\QrController::class . ':generateGearQr');
+$app->get('/api/qr/combatant/{id}', \Aegis\Controllers\QrController::class . ':generateCombatantQr');
 
 // Health check
 $app->get('/api/health', function ($request, $response, $args) {
@@ -102,8 +127,17 @@ $app->get('/api/health', function ($request, $response, $args) {
                 'achievements' => true,
                 'missions' => true,
                 'weather' => true,
-                'admin' => true,
-                'roles' => ['civilian', 'hero', 'villain', 'admin']
+                'currency' => true,
+                'geolocation' => true,
+                'qr_codes' => true,
+                'admin' => true
+            ],
+            'roles' => ['civilian', 'hero', 'villain', 'admin'],
+            'third_party_apis' => [
+                'openweathermap' => 'https://openweathermap.org',
+                'exchangerate' => 'https://exchangerate-api.com',
+                'ip-api' => 'http://ip-api.com',
+                'qrserver' => 'https://qrserver.com'
             ]
         ]
     ];

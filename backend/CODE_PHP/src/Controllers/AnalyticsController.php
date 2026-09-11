@@ -17,7 +17,7 @@ class AnalyticsController
     }
     
     /**
-     * GET /api/analytics/{combatantId}/summary
+     * GET /api/analytics/{id}/summary
      */
     public function getSummary($request, $response, $args)
     {
@@ -28,7 +28,6 @@ class AnalyticsController
         }
         
         try {
-            // Get combatant
             $stmt = $this->db->prepare("SELECT id, name, faction, credits, bio_capacity_max FROM combatants WHERE id = ?");
             $stmt->execute([$combatantId]);
             $combatant = $stmt->fetch();
@@ -37,22 +36,11 @@ class AnalyticsController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
-            // Get stats
             $stats = $this->getOrCreateStats($combatantId);
-            
-            // Get achievements
-            $achievements = $this->getAchievementsData($combatantId);  // ← Changed from getAchievements
-            
-            // Get activity
+            $achievements = $this->getAchievementsData($combatantId);
             $activity = $this->getRecentActivity($combatantId);
-            
-            // Get battle stats
             $battleStats = $this->getBattleStats($combatantId);
-            
-            // Calculate net worth
             $netWorth = $this->calculateNetWorth($combatantId);
-            
-            // Calculate win rate
             $winRate = $this->calculateWinRate($stats);
             
             return $this->jsonResponse($response, 200, true, 'Analytics retrieved', [
@@ -95,7 +83,7 @@ class AnalyticsController
     }
     
     /**
-     * GET /api/analytics/{combatantId}/achievements
+     * GET /api/analytics/{id}/achievements
      */
     public function getAchievements($request, $response, $args)
     {
@@ -112,7 +100,7 @@ class AnalyticsController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
-            $achievements = $this->getAchievementsData($combatantId);  // ← Changed from getAchievements
+            $achievements = $this->getAchievementsData($combatantId);
             
             return $this->jsonResponse($response, 200, true, 'Achievements retrieved', $achievements);
             
@@ -122,12 +110,15 @@ class AnalyticsController
     }
     
     /**
-     * GET /api/analytics/{combatantId}/battle-history
+     * GET /api/analytics/{id}/battle-history
      */
     public function getBattleHistory($request, $response, $args)
     {
         $combatantId = $args['id'] ?? null;
-        $limit = (int)($request->getQueryParam('limit', 20));
+        
+        // ✅ FIXED: Use getQueryParams() for Slim 4
+        $queryParams = $request->getQueryParams();
+        $limit = (int)($queryParams['limit'] ?? 20);
         
         if (!$combatantId) {
             return $this->jsonResponse($response, 400, false, 'Combatant ID required');
@@ -142,16 +133,10 @@ class AnalyticsController
             
             $stmt = $this->db->prepare("
                 SELECT 
-                    id,
-                    opponent_name,
-                    battle_type,
-                    result,
-                    credits_earned,
-                    gear_dropped,
-                    damage_dealt,
-                    damage_taken,
-                    battle_duration_seconds,
-                    fought_at
+                    id, opponent_name, battle_type, result,
+                    credits_earned, gear_dropped,
+                    damage_dealt, damage_taken,
+                    battle_duration_seconds, fought_at
                 FROM battle_history
                 WHERE combatant_id = ?
                 ORDER BY fought_at DESC
@@ -171,7 +156,7 @@ class AnalyticsController
     }
     
     /**
-     * POST /api/analytics/{combatantId}/sync
+     * POST /api/analytics/{id}/sync
      */
     public function syncStats($request, $response, $args)
     {
@@ -219,23 +204,14 @@ class AnalyticsController
         return $stats;
     }
     
-    /**
-     * PRIVATE METHOD: Get achievements data (renamed to avoid conflict)
-     */
-    private function getAchievementsData(int $combatantId): array  // ← RENAMED from getAchievements
+    private function getAchievementsData(int $combatantId): array
     {
         $stmt = $this->db->prepare("
             SELECT 
-                a.id,
-                a.name,
-                a.description,
-                a.category,
-                a.points,
-                a.badge_icon,
+                a.id, a.name, a.description, a.category, a.points, a.badge_icon,
                 COALESCE(ca.is_completed, 0) as is_completed,
                 COALESCE(ca.progress, 0) as progress,
-                ca.unlocked_at,
-                a.unlock_condition
+                ca.unlocked_at, a.unlock_condition
             FROM achievements a
             LEFT JOIN combatant_achievements ca 
                 ON a.id = ca.achievement_id AND ca.combatant_id = ?
@@ -273,11 +249,7 @@ class AnalyticsController
     {
         try {
             $stmt = $this->db->prepare("
-                SELECT 
-                    activity_type,
-                    details,
-                    credits_change,
-                    logged_at
+                SELECT activity_type, details, credits_change, logged_at
                 FROM activity_log
                 WHERE combatant_id = ?
                 ORDER BY logged_at DESC
@@ -293,7 +265,6 @@ class AnalyticsController
     private function calculateNetWorth(int $combatantId): int
     {
         try {
-            // Get gear value separately
             $stmt = $this->db->prepare("
                 SELECT COALESCE(SUM(g.price), 0) as gear_value
                 FROM inventory i
@@ -304,10 +275,7 @@ class AnalyticsController
             $result = $stmt->fetch();
             $gearValue = (int)($result['gear_value'] ?? 0);
             
-            // Get current credits
-            $stmt = $this->db->prepare("
-                SELECT credits FROM combatants WHERE id = ?
-            ");
+            $stmt = $this->db->prepare("SELECT credits FROM combatants WHERE id = ?");
             $stmt->execute([$combatantId]);
             $combatant = $stmt->fetch();
             $credits = (int)($combatant['credits'] ?? 0);
@@ -329,8 +297,7 @@ class AnalyticsController
                     SUM(CASE WHEN result = 'draw' THEN 1 ELSE 0 END) as draws,
                     COALESCE(AVG(damage_dealt), 0) as avg_damage_dealt,
                     COALESCE(AVG(damage_taken), 0) as avg_damage_taken
-                FROM battle_history
-                WHERE combatant_id = ?
+                FROM battle_history WHERE combatant_id = ?
             ");
             $stmt->execute([$combatantId]);
             $stats = $stmt->fetch();
@@ -348,13 +315,8 @@ class AnalyticsController
             ];
         } catch (Exception $e) {
             return [
-                'total_battles' => 0,
-                'wins' => 0,
-                'losses' => 0,
-                'draws' => 0,
-                'win_rate' => 0,
-                'avg_damage_dealt' => 0,
-                'avg_damage_taken' => 0
+                'total_battles' => 0, 'wins' => 0, 'losses' => 0, 'draws' => 0,
+                'win_rate' => 0, 'avg_damage_dealt' => 0, 'avg_damage_taken' => 0
             ];
         }
     }
@@ -362,9 +324,7 @@ class AnalyticsController
     private function calculateWinRate(array $stats): float
     {
         $total = ($stats['total_battles_won'] ?? 0) + ($stats['total_battles_lost'] ?? 0) + ($stats['total_battles_drawn'] ?? 0);
-        return $total > 0 
-            ? round((($stats['total_battles_won'] ?? 0) / $total) * 100, 1)
-            : 0;
+        return $total > 0 ? round((($stats['total_battles_won'] ?? 0) / $total) * 100, 1) : 0;
     }
     
     private function updateCombatantStats(int $combatantId): void
@@ -394,13 +354,7 @@ class AnalyticsController
     
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
     {
-        $payload = [
-            'status' => $status,
-            'success' => $success,
-            'message' => $message,
-            'data' => $data
-        ];
-        
+        $payload = ['status' => $status, 'success' => $success, 'message' => $message, 'data' => $data];
         $response->getBody()->write(json_encode($payload));
         return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
     }

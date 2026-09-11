@@ -7,48 +7,55 @@ echo    AEGIS AND ANARCHY - FULL SYSTEM
 echo ========================================
 echo.
 
-:: Check if backend exists
-if not exist "backend\CODE_PHP" (
-    echo [ERROR] Backend not found at: backend\CODE_PHP
-    echo.
-    pause
-    exit /b 1
-)
+:: Set project root
+set PROJECT_ROOT=%~dp0
+cd /d "%PROJECT_ROOT%"
 
-:: Check if frontend exists (package.json in current directory)
-if exist "package.json" (
-    set FRONTEND_DIR=.
-    echo [INFO] Frontend found in current directory
-) else if exist "frontend\package.json" (
-    set FRONTEND_DIR=frontend
-    echo [INFO] Frontend found at: frontend
-) else if exist "FRONT_END\package.json" (
-    set FRONTEND_DIR=FRONT_END
-    echo [INFO] Frontend found at: FRONT_END
-) else (
-    echo [ERROR] Frontend package.json not found!
-    echo.
-    echo Please check these locations:
-    echo   - .\package.json
-    echo   - frontend\package.json
-    echo   - FRONT_END\package.json
-    echo.
-    echo Current directory: %cd%
-    echo.
-    pause
-    exit /b 1
-)
+:: Find backend folder
+set BACKEND_DIR=
+if exist "backend\CODE_PHP" set BACKEND_DIR=backend\CODE_PHP
+if exist "BACKEND\CODE_PHP" set BACKEND_DIR=BACKEND\CODE_PHP
+if exist "CODE_PHP" set BACKEND_DIR=CODE_PHP
 
-echo [INFO] Starting Backend Server...
+:: Find frontend folder
+set FRONTEND_DIR=
+if exist "frontend\package.json" set FRONTEND_DIR=frontend
+if exist "FRONT_END\package.json" set FRONTEND_DIR=FRONT_END
+if exist "frontend\index.html" if "%FRONTEND_DIR%"=="" set FRONTEND_DIR=frontend
+if exist "FRONT_END\index.html" if "%FRONTEND_DIR%"=="" set FRONTEND_DIR=FRONT_END
+
+echo [INFO] Project Root: %PROJECT_ROOT%
+echo [INFO] Backend Dir:  %BACKEND_DIR%
+echo [INFO] Frontend Dir: %FRONTEND_DIR%
 echo.
-start "Aegis Backend" cmd /k "cd backend && start_backend.bat"
 
-:: Wait 3 seconds for backend to start
+if "%BACKEND_DIR%"=="" (
+    echo [ERROR] Backend not found!
+    echo Looked in: backend\CODE_PHP, BACKEND\CODE_PHP, CODE_PHP
+    pause
+    exit /b 1
+)
+
+if "%FRONTEND_DIR%"=="" (
+    echo [ERROR] Frontend not found!
+    echo Looked in: frontend, FRONT_END
+    pause
+    exit /b 1
+)
+
+:: Start Backend
+echo [INFO] Starting Backend Server...
+start "Aegis Backend" cmd /k "cd /d %PROJECT_ROOT%%BACKEND_DIR% && php -S localhost:8080 -t public"
+
+:: Wait for backend
 timeout /t 3 /nobreak >nul
 
-echo [INFO] Starting Frontend Server (Vite)...
-echo.
-start "Aegis Frontend" cmd /k "cd %FRONTEND_DIR% && start_frontend.bat"
+:: Start Frontend
+echo [INFO] Starting Frontend Server...
+start "Aegis Frontend" cmd /k "cd /d %PROJECT_ROOT%%FRONTEND_DIR% && npm run dev"
+
+:: Wait for frontend
+timeout /t 5 /nobreak >nul
 
 echo ========================================
 echo [SUCCESS] Both servers are starting!
@@ -57,11 +64,12 @@ echo.
 echo Backend:  http://localhost:8080
 echo Frontend: http://localhost:5173
 echo.
-echo API Test: http://localhost:8080/api/combatants/1
+echo Opening browser...
+timeout /t 2 /nobreak >nul
+start http://localhost:5173
+
 echo.
-echo The terminal windows will open separately.
 echo Close each terminal to stop the servers.
 echo ========================================
 echo.
-
 pause
