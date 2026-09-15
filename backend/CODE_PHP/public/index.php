@@ -106,12 +106,22 @@ $app->get('/api/admin/users/{id}/transactions', \Aegis\Controllers\AdminControll
 $app->get('/api/admin/login-history', \Aegis\Controllers\AdminController::class . ':getLoginHistory');
 
 // ============================================
-// WEATHER (3RD PARTY API - OpenWeatherMap)
+// WEATHER (3RD PARTY API)
 // ============================================
 $app->get('/api/weather/current', \Aegis\Controllers\WeatherController::class . ':getCurrent');
 $app->get('/api/weather/forecast', \Aegis\Controllers\WeatherController::class . ':getForecast');
 $app->post('/api/weather/combat-impact', \Aegis\Controllers\WeatherController::class . ':getCombatImpact');
 $app->get('/api/weather/combat-forecast', \Aegis\Controllers\WeatherController::class . ':getCombatForecast');
+
+// ============================================
+// EXTERNAL APIs (ExchangeRate + RandomUser)
+// ============================================
+$app->get('/api/external/exchange-rates', \Aegis\Controllers\ExternalApiController::class . ':getExchangeRates');
+$app->map(['GET', 'POST'], '/api/external/convert-credits', \Aegis\Controllers\ExternalApiController::class . ':convertCredits');
+$app->get('/api/external/marketplace-prices', \Aegis\Controllers\ExternalApiController::class . ':getMarketplacePrices');
+$app->get('/api/external/random-user', \Aegis\Controllers\ExternalApiController::class . ':getRandomUser');
+$app->map(['GET', 'POST'], '/api/external/generate-bot', \Aegis\Controllers\ExternalApiController::class . ':generateBot');
+$app->map(['GET', 'POST'], '/api/external/generate-bots', \Aegis\Controllers\ExternalApiController::class . ':generateBots');
 
 // ============================================
 // HEALTH

@@ -14,7 +14,7 @@ class WeatherController
     public function __construct()
     {
         $this->db = Database::getConnection();
-        $this->apiKey = defined('ec74178dbcb33f3ebd64f1f7db7ee90e') ? OPENWEATHER_API_KEY : '';
+        $this->apiKey = defined('OPENWEATHER_API_KEY') ? OPENWEATHER_API_KEY : '';
         $this->baseUrl = 'https://api.openweathermap.org/data/2.5';
     }
     
@@ -35,7 +35,7 @@ class WeatherController
             
             // If no API key, return demo data
             if (empty($this->apiKey) || $this->apiKey === 'YOUR_API_KEY_HERE') {
-                return $this->jsonResponse($response, 200, true, 'Weather (DEMO mode - add API key for real data)', [
+                $demoWeather = [
                     'demo_mode' => true,
                     'city' => $city,
                     'temperature' => 28,
@@ -45,7 +45,9 @@ class WeatherController
                     'humidity' => 75,
                     'wind_speed' => 5.2,
                     'icon' => '01d'
-                ]);
+                ];
+                $impact = $this->calculateCombatImpact($demoWeather);
+                return $this->jsonResponse($response, 200, true, 'Weather (DEMO mode - add API key for real data)', array_merge($demoWeather, $impact));
             }
             
             $url = "{$this->baseUrl}/weather?q=" . urlencode($city) . "&appid={$this->apiKey}&units=metric";
@@ -55,15 +57,17 @@ class WeatherController
                 return $this->jsonResponse($response, 404, false, 'City not found or API error');
             }
             
-            return $this->jsonResponse($response, 200, true, 'Weather retrieved', [
+            $condition = $data['weather'][0]['main'] ?? 'Clear';
+            $temp = round($data['main']['temp'], 1);
+            $liveWeather = [
                 'demo_mode' => false,
                 'city' => $data['name'],
                 'country' => $data['sys']['country'] ?? '',
-                'temperature' => round($data['main']['temp'], 1),
+                'temperature' => $temp,
                 'feels_like' => round($data['main']['feels_like'], 1),
                 'temp_min' => round($data['main']['temp_min'], 1),
                 'temp_max' => round($data['main']['temp_max'], 1),
-                'condition' => $data['weather'][0]['main'],
+                'condition' => $condition,
                 'description' => $data['weather'][0]['description'],
                 'humidity' => $data['main']['humidity'],
                 'pressure' => $data['main']['pressure'],
@@ -73,7 +77,10 @@ class WeatherController
                 'icon' => $data['weather'][0]['icon'],
                 'sunrise' => date('H:i', $data['sys']['sunrise']),
                 'sunset' => date('H:i', $data['sys']['sunset'])
-            ]);
+            ];
+            $impact = $this->calculateCombatImpact(['condition' => $condition, 'temperature' => $temp]);
+            
+            return $this->jsonResponse($response, 200, true, 'Weather retrieved', array_merge($liveWeather, $impact));
             
         } catch (\Exception $e) {
             return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
