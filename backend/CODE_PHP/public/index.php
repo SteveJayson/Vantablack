@@ -128,6 +128,14 @@ $app->get('/api/rewards/leaderboard', \Aegis\Controllers\RewardsController::clas
 $app->get('/api/rewards/history/{id}', \Aegis\Controllers\RewardsController::class . ':getClaimHistory');
 
 // ============================================
+// CHAT ROUTES
+// ============================================
+$app->get('/api/chat/messages', \Aegis\Controllers\ChatController::class . ':getMessages');
+$app->post('/api/chat/send', \Aegis\Controllers\ChatController::class . ':sendMessage');
+$app->get('/api/chat/stats', \Aegis\Controllers\ChatController::class . ':getChatStats');
+$app->delete('/api/chat/message/{id}', \Aegis\Controllers\ChatController::class . ':deleteMessage');
+
+// ============================================
 // ADMIN
 // ============================================
 $app->get('/api/admin/dashboard', \Aegis\Controllers\AdminController::class . ':getDashboard');

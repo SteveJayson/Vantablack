@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import WeatherWidget from '../components/WeatherWidget';
 import CurrencyWidget from '../components/CurrencyWidget';
 import DailyRewardModal from '../components/DailyRewardModal';
+import ChatWidget from '../components/ChatWidget';
 
 const API = 'http://localhost:8080/api';
 
@@ -15,6 +16,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
     const [showWeather, setShowWeather] = useState(true);
     const [showCurrency, setShowCurrency] = useState(true);
     const [showDailyReward, setShowDailyReward] = useState(false);
+    const [showChat, setShowChat] = useState(false);
 
     const role = user?.role || 'hero';
 
@@ -188,6 +190,14 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                     </button>
 
                     <button
+                        onClick={() => setShowChat(!showChat)}
+                        style={styles.chatBtn}
+                        title="Chat"
+                    >
+                        💬 Chat
+                    </button>
+
+                    <button
                         onClick={() => setShowWeather(!showWeather)}
                         style={styles.toggleBtn}
                         title="Toggle Weather"
@@ -251,6 +261,13 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                     {showCurrency && (
                         <div style={styles.panel}>
                             <CurrencyWidget credits={user.credits} />
+                        </div>
+                    )}
+
+                    {/* Chat Widget */}
+                    {showChat && (
+                        <div style={styles.panel}>
+                            <ChatWidget user={user} />
                         </div>
                     )}
                 </div>
@@ -941,5 +958,17 @@ const styles = {
         fontWeight: 'bold',
         cursor: 'pointer',
         fontFamily: 'monospace'
-    }
+    },
+    chatBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
+    },
 };
