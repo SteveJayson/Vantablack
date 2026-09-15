@@ -136,6 +136,16 @@ $app->get('/api/chat/stats', \Aegis\Controllers\ChatController::class . ':getCha
 $app->delete('/api/chat/message/{id}', \Aegis\Controllers\ChatController::class . ':deleteMessage');
 
 // ============================================
+// EVENTS ROUTES
+// ============================================
+$app->get('/api/events', \Aegis\Controllers\EventController::class . ':getEvents');
+$app->get('/api/events/active-count', \Aegis\Controllers\EventController::class . ':getActiveCount');
+$app->get('/api/events/{id}', \Aegis\Controllers\EventController::class . ':getEvent');
+$app->post('/api/events/join', \Aegis\Controllers\EventController::class . ':joinEvent');
+$app->post('/api/events/score', \Aegis\Controllers\EventController::class . ':addScore');
+$app->post('/api/events/claim-rewards', \Aegis\Controllers\EventController::class . ':claimRewards');
+
+// ============================================
 // ADMIN
 // ============================================
 $app->get('/api/admin/dashboard', \Aegis\Controllers\AdminController::class . ':getDashboard');
@@ -145,6 +155,7 @@ $app->get('/api/admin/transactions', \Aegis\Controllers\AdminController::class .
 $app->get('/api/admin/users', \Aegis\Controllers\AdminController::class . ':getUsers');
 $app->get('/api/admin/users/{id}/transactions', \Aegis\Controllers\AdminController::class . ':getUserTransactions');
 $app->get('/api/admin/login-history', \Aegis\Controllers\AdminController::class . ':getLoginHistory');
+$app->get('/api/admin/charts', \Aegis\Controllers\AdminController::class . ':getChartData');
 
 // ============================================
 // WEATHER (3RD PARTY API)

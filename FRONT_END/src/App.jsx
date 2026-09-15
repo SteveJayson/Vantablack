@@ -6,6 +6,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Combat from './pages/Combat';
 import Crafting from './pages/Crafting';
 import Factions from './pages/Factions';
+import Events from './pages/Events';
 
 export default function App() {
     const [user, setUser] = useState(() => {
@@ -34,7 +35,6 @@ export default function App() {
         }
     };
 
-    // ✅ UPDATED: Handles both direct credits OR fetch from backend
     const refreshUser = async (newCredits = null) => {
         if (newCredits !== null && newCredits !== undefined) {
             const updatedUser = { ...user, credits: newCredits };
@@ -57,6 +57,16 @@ export default function App() {
             console.error('Refresh user failed:', err);
         }
     };
+
+    if (screen === 'events' && user) {
+        return (
+            <Events
+                user={user}
+                onBack={() => setScreen('dashboard')}
+                onEventAction={refreshUser}
+            />
+        );
+    }
 
     if (screen === 'factions' && user) {
         return (
@@ -96,6 +106,7 @@ export default function App() {
                 onShowCombat={() => setScreen('combat')}
                 onShowCrafting={() => setScreen('crafting')}
                 onShowFactions={() => setScreen('factions')}
+                onShowEvents={() => setScreen('events')}
             />
         );
     }

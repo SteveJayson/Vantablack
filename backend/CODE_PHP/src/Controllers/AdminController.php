@@ -22,7 +22,6 @@ class AdminController
     
     /**
      * GET /api/admin/dashboard
-     * Complete admin dashboard with per-role transaction stats
      */
     public function getDashboard($request, $response, $args)
     {
@@ -428,6 +427,9 @@ class AdminController
         }
     }
     
+    /**
+     * GET /api/admin/transactions
+     */
     public function getTransactions($request, $response, $args)
     {
         try {
@@ -453,6 +455,9 @@ class AdminController
         }
     }
     
+    /**
+     * GET /api/admin/users/{id}/transactions
+     */
     public function getUserTransactions($request, $response, $args)
     {
         try {
@@ -515,6 +520,9 @@ class AdminController
         }
     }
     
+    /**
+     * GET /api/admin/login-history
+     */
     public function getLoginHistory($request, $response, $args)
     {
         try {
@@ -545,6 +553,140 @@ class AdminController
         }
     }
     
+    /**
+     * GET /api/admin/charts?adminId=7
+     * Returns data formatted for charts (NEW!)
+     */
+    public function getChartData($request, $response, $args)
+    {
+        try {
+            $adminId = $this->getQuery($request, 'adminId');
+            
+            if (!$this->isAdmin($adminId)) {
+                return $this->jsonResponse($response, 403, false, 'Admin access required');
+            }
+            
+            // ============================================
+            // 1. Daily transactions (last 7 days)
+            // ============================================
+            $dailyData = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $date = date('Y-m-d', strtotime("-$i days"));
+                $dailyData[$date] = ['purchases' => 0, 'sells' => 0, 'revenue' => 0];
+            }
+            
+            $stmt = $this->db->query("
+                SELECT 
+                    DATE(created_at) as date,
+                    transaction_type,
+                    COUNT(*) as count,
+                    COALESCE(SUM(amount), 0) as total
+                FROM transactions
+                WHERE status = 'completed'
+                    AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                GROUP BY DATE(created_at), transaction_type
+            ");
+            
+            foreach ($stmt->fetchAll() as $row) {
+                $date = $row['date'];
+                if (isset($dailyData[$date])) {
+                    if ($row['transaction_type'] === 'purchase') {
+                        $dailyData[$date]['purchases'] = (int)$row['count'];
+                        $dailyData[$date]['revenue'] = (int)$row['total'];
+                    } else {
+                        $dailyData[$date]['sells'] = (int)$row['count'];
+                    }
+                }
+            }
+            
+            // ============================================
+            // 2. Users by role
+            // ============================================
+            $stmt = $this->db->query("
+                SELECT role, COUNT(*) as count
+                FROM combatants
+                GROUP BY role
+            ");
+            $roleDistribution = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $roleDistribution[$row['role']] = (int)$row['count'];
+            }
+            
+            // ============================================
+            // 3. Top spenders
+            // ============================================
+            $stmt = $this->db->query("
+                SELECT 
+                    combatant_name,
+                    combatant_role,
+                    SUM(amount) as total_spent
+                FROM transactions
+                WHERE transaction_type = 'purchase' AND status = 'completed'
+                GROUP BY combatant_name, combatant_role
+                ORDER BY total_spent DESC
+                LIMIT 8
+            ");
+            $topSpenders = $stmt->fetchAll();
+            
+            foreach ($topSpenders as &$s) {
+                $s['total_spent'] = (int)$s['total_spent'];
+            }
+            
+            // ============================================
+            // 4. Revenue by role
+            // ============================================
+            $stmt = $this->db->query("
+                SELECT 
+                    combatant_role,
+                    COALESCE(SUM(amount), 0) as revenue,
+                    COUNT(*) as count
+                FROM transactions
+                WHERE transaction_type = 'purchase' AND status = 'completed'
+                GROUP BY combatant_role
+            ");
+            $revenueByRole = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $revenueByRole[$row['combatant_role']] = [
+                    'revenue' => (int)$row['revenue'],
+                    'count' => (int)$row['count']
+                ];
+            }
+            
+            // ============================================
+            // 5. Gear slot distribution
+            // ============================================
+            $stmt = $this->db->query("
+                SELECT g.slot, COUNT(*) as count
+                FROM inventory i
+                JOIN gear_items g ON i.gear_id = g.id
+                GROUP BY g.slot
+            ");
+            $slotDistribution = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $slotDistribution[$row['slot']] = (int)$row['count'];
+            }
+            
+            return $this->jsonResponse($response, 200, true, 'Chart data retrieved', [
+                'daily' => [
+                    'labels' => array_keys($dailyData),
+                    'purchases' => array_column($dailyData, 'purchases'),
+                    'sells' => array_column($dailyData, 'sells'),
+                    'revenue' => array_column($dailyData, 'revenue')
+                ],
+                'roleDistribution' => $roleDistribution,
+                'topSpenders' => $topSpenders,
+                'revenueByRole' => $revenueByRole,
+                'slotDistribution' => $slotDistribution
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Helper: Check if user is admin
+     */
     private function isAdmin($adminId): bool
     {
         if (!$adminId) return false;
@@ -560,6 +702,9 @@ class AdminController
         }
     }
     
+    /**
+     * Helper: JSON response
+     */
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
     {
         $payload = [

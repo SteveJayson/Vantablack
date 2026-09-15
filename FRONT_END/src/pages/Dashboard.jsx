@@ -3,10 +3,10 @@ import WeatherWidget from '../components/WeatherWidget';
 import CurrencyWidget from '../components/CurrencyWidget';
 import DailyRewardModal from '../components/DailyRewardModal';
 import ChatWidget from '../components/ChatWidget';
-
+import AdminCharts from '../components/AdminCharts';
 const API = 'http://localhost:8080/api';
 
-export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting, onShowFactions }) {
+export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting, onShowFactions, onShowEvents }) {
     const [user, setUser] = useState(initialUser);
     const [catalog, setCatalog] = useState([]);
     const [inventory, setInventory] = useState([]);
@@ -198,6 +198,14 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                     </button>
 
                     <button
+                        onClick={onShowEvents}
+                        style={styles.eventBtn}
+                        title="Events"
+                    >
+                        🎪 Events
+                    </button>
+
+                    <button
                         onClick={() => setShowWeather(!showWeather)}
                         style={styles.toggleBtn}
                         title="Toggle Weather"
@@ -280,6 +288,8 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
 
                             {adminData && (
                                 <>
+                                    {/* REGISTERED USERS */}
+                                    ...
                                     {/* REGISTERED USERS */}
                                     <h3 style={styles.sectionTitle}>📋 REGISTERED USERS</h3>
                                     <div style={styles.adminStats}>
@@ -533,8 +543,15 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     <p style={{ fontSize: '0.7rem', color: '#8888cc', marginTop: '10px', textAlign: 'center' }}>
                                         Uses <strong>RandomUser API</strong> to generate realistic test accounts (password: <code>botpassword123</code>)
                                     </p>
+
+                                    {/* 📈 ANALYTICS CHARTS */}
+                                    <div style={{ marginTop: '30px' }}>
+                                        <AdminCharts adminId={user.id} />
+                                    </div>
                                 </>
                             )}
+
+
                         </div>
                     ) : (
                         <div>
@@ -962,6 +979,18 @@ const styles = {
     chatBtn: {
         padding: '8px 16px',
         background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
+    },
+    eventBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #ff00ff, #ffaa00)',
         border: 'none',
         color: '#0a0a1a',
         borderRadius: '6px',
