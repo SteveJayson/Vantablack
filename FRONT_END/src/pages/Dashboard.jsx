@@ -3,7 +3,9 @@ import WeatherWidget from '../components/WeatherWidget';
 import CurrencyWidget from '../components/CurrencyWidget';
 import DailyRewardModal from '../components/DailyRewardModal';
 import ChatWidget from '../components/ChatWidget';
+import NotificationBell from '../components/NotificationBell';
 import AdminCharts from '../components/AdminCharts';
+
 const API = 'http://localhost:8080/api';
 
 export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting, onShowFactions, onShowEvents }) {
@@ -15,10 +17,11 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
     const [alert, setAlert] = useState(null);
     const [showWeather, setShowWeather] = useState(true);
     const [showCurrency, setShowCurrency] = useState(true);
-    const [showDailyReward, setShowDailyReward] = useState(false);
     const [showChat, setShowChat] = useState(false);
+    const [showDailyReward, setShowDailyReward] = useState(false);
 
     const role = user?.role || 'hero';
+    const canAct = role === 'hero' || role === 'villain';
 
     useEffect(() => {
         syncUser();
@@ -47,7 +50,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
             const res = await fetch(`${API}/rewards/daily-status/${initialUser.id}`);
             const data = await res.json();
             if (data.success && data.data.canClaim) {
-                setTimeout(() => setShowDailyReward(true), 1000);
+                setTimeout(() => setShowDailyReward(true), 1500);
             }
         } catch (err) {
             console.error('Daily check failed:', err);
@@ -92,11 +95,11 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
         const data = await res.json();
 
         if (data.success) {
-            setUser({ ...user, credits: data.data.newBalance });
-            localStorage.setItem('aegis_user', JSON.stringify({ ...user, credits: data.data.newBalance }));
-            showAlert('success', `✅ Purchased! Balance: ₵${data.data.newBalance}`);
+            const updatedUser = { ...user, credits: data.data.newBalance };
+            setUser(updatedUser);
+            localStorage.setItem('aegis_user', JSON.stringify(updatedUser));
+            showAlert('success', `✅ Purchased! Balance: ₵${data.data.newBalance.toLocaleString()}`);
             loadData();
-            if (role === 'admin') loadAdminDashboard();
         } else {
             showAlert('error', `❌ ${data.message}`);
         }
@@ -111,11 +114,11 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
         const data = await res.json();
 
         if (data.success) {
-            setUser({ ...user, credits: data.data.newBalance });
-            localStorage.setItem('aegis_user', JSON.stringify({ ...user, credits: data.data.newBalance }));
-            showAlert('success', `✅ Sold for ₵${data.data.sellPrice}`);
+            const updatedUser = { ...user, credits: data.data.newBalance };
+            setUser(updatedUser);
+            localStorage.setItem('aegis_user', JSON.stringify(updatedUser));
+            showAlert('success', `✅ Sold for ₵${data.data.sellPrice.toLocaleString()}`);
             loadData();
-            if (role === 'admin') loadAdminDashboard();
         } else {
             showAlert('error', `❌ ${data.message}`);
         }
@@ -151,80 +154,96 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
 
     return (
         <div style={styles.container}>
-            {/* HEADER */}
+            {/* ============================================
+                HEADER - REORGANIZED
+            ============================================ */}
             <div style={styles.header}>
-                <div>
+                {/* LEFT: Logo */}
+                <div style={styles.logoSection}>
                     <h1 style={styles.logoTitle}>⚡ VANTABLACK</h1>
                     <p style={styles.logoSub}>TACTICAL COMMAND CENTER</p>
                 </div>
-                <div style={styles.userInfo}>
-                    <span>{user.name}</span>
-                    <span style={{ ...styles.roleBadge, background: getRoleColor(role), color: '#0a0a1a' }}>
-                        {role.toUpperCase()}
-                    </span>
 
-                    {(role === 'hero' || role === 'villain') && (
-                        <button onClick={onShowCombat} style={styles.combatBtn} title="Enter Combat">
-                            ⚔️ Combat
+                {/* RIGHT: User + Actions */}
+                <div style={styles.headerRight}>
+                    {/* User Info Row */}
+                    <div style={styles.userRow}>
+                        <span style={styles.userName}>{user.name}</span>
+                        <span style={{
+                            ...styles.roleBadge,
+                            background: getRoleColor(role),
+                            color: '#0a0a1a'
+                        }}>
+                            {role.toUpperCase()}
+                        </span>
+                        <span style={styles.creditBadge}>₵{user.credits?.toLocaleString()}</span>
+
+                        {/* Notification Bell */}
+                        <NotificationBell user={user} />
+
+                        {/* Logout */}
+                        <button onClick={onLogout} style={styles.logoutBtn}>🚪</button>
+                    </div>
+
+                    {/* Action Buttons Row */}
+                    <div style={styles.actionRow}>
+                        {canAct && (
+                            <>
+                                <button onClick={onShowCombat} style={styles.combatBtn}>
+                                    ⚔️ Combat
+                                </button>
+                                <button onClick={onShowCrafting} style={styles.craftBtn}>
+                                    🔨 Craft
+                                </button>
+                                <button onClick={onShowFactions} style={styles.factionBtn}>
+                                    🏴 Factions
+                                </button>
+                            </>
+                        )}
+                        <button onClick={onShowEvents} style={styles.eventBtn}>
+                            🎪 Events
                         </button>
-                    )}
-
-                    {(role === 'hero' || role === 'villain') && (
-                        <button onClick={onShowCrafting} style={styles.craftBtn} title="Craft Gear">
-                            🔨 Craft
+                        <button onClick={() => setShowDailyReward(true)} style={styles.rewardBtn}>
+                            🎁 Rewards
                         </button>
-                    )}
-
-                    {(role === 'hero' || role === 'villain') && (
-                        <button onClick={onShowFactions} style={styles.factionBtn} title="Faction Wars">
-                            🏴 Factions
+                        <button
+                            onClick={() => setShowChat(!showChat)}
+                            style={{
+                                ...styles.chatBtn,
+                                ...(showChat ? styles.chatBtnActive : {})
+                            }}
+                        >
+                            💬 Chat
                         </button>
-                    )}
-
-                    <button
-                        onClick={() => setShowDailyReward(true)}
-                        style={styles.rewardBtn}
-                        title="Daily Rewards"
-                    >
-                        🎁 Rewards
-                    </button>
-
-                    <button
-                        onClick={() => setShowChat(!showChat)}
-                        style={styles.chatBtn}
-                        title="Chat"
-                    >
-                        💬 Chat
-                    </button>
-
-                    <button
-                        onClick={onShowEvents}
-                        style={styles.eventBtn}
-                        title="Events"
-                    >
-                        🎪 Events
-                    </button>
-
-                    <button
-                        onClick={() => setShowWeather(!showWeather)}
-                        style={styles.toggleBtn}
-                        title="Toggle Weather"
-                    >
-                        🌍
-                    </button>
-                    <button
-                        onClick={() => setShowCurrency(!showCurrency)}
-                        style={styles.toggleBtn}
-                        title="Toggle Currency"
-                    >
-                        💱
-                    </button>
-                    <button onClick={onLogout} style={styles.logoutBtn}>🚪 LOGOUT</button>
+                        <button
+                            onClick={() => setShowWeather(!showWeather)}
+                            style={{
+                                ...styles.toggleBtn,
+                                ...(showWeather ? styles.toggleBtnActive : {})
+                            }}
+                            title="Toggle Weather"
+                        >
+                            🌍
+                        </button>
+                        <button
+                            onClick={() => setShowCurrency(!showCurrency)}
+                            style={{
+                                ...styles.toggleBtn,
+                                ...(showCurrency ? styles.toggleBtnActive : {})
+                            }}
+                            title="Toggle Currency"
+                        >
+                            💱
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {alert && (
-                <div style={{ ...styles.alert, ...(alert.type === 'error' ? styles.alertError : styles.alertSuccess) }}>
+                <div style={{
+                    ...styles.alert,
+                    ...(alert.type === 'error' ? styles.alertError : styles.alertSuccess)
+                }}>
                     {alert.msg}
                 </div>
             )}
@@ -236,7 +255,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                     <div style={styles.panel}>
                         <h2 style={styles.panelTitle}>🎭 ACTIVE USER</h2>
                         <div style={styles.profileCard}>
-                            <h3 style={{ marginBottom: '8px', marginTop: 0 }}>{user.name}</h3>
+                            <h3 style={styles.profileName}>{user.name}</h3>
                             <div style={{
                                 ...styles.roleBadge,
                                 background: getRoleColor(role),
@@ -288,9 +307,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
 
                             {adminData && (
                                 <>
-                                    {/* REGISTERED USERS */}
-                                    ...
-                                    {/* REGISTERED USERS */}
+                                    {/* REGISTERED */}
                                     <h3 style={styles.sectionTitle}>📋 REGISTERED USERS</h3>
                                     <div style={styles.adminStats}>
                                         <AdminStat value={adminData.registered.civilians} label="CIVILIANS" color="#ffaa00" />
@@ -317,7 +334,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                         <AdminStat value={adminData.online.admins} label="ADMINS" color="#ff00ff" />
                                     </div>
 
-                                    {/* TOTAL PURCHASES BY ROLE */}
+                                    {/* SPENDING */}
                                     <h3 style={styles.sectionTitle}>🛒 TOTAL PURCHASES BY ROLE</h3>
                                     <div style={styles.adminStats}>
                                         <div style={styles.adminStat}>
@@ -352,13 +369,10 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                                 ₵{(adminData.transactions?.total_revenue || 0).toLocaleString()}
                                             </div>
                                             <div style={styles.adminStatLabel}>💰 TOTAL REVENUE</div>
-                                            <div style={{ ...styles.adminStatLabel, color: '#8888cc', marginTop: '4px' }}>
-                                                All roles combined
-                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* DETAILED SPENDING BREAKDOWN */}
+                                    {/* SPENDING TABLE */}
                                     <h3 style={styles.sectionTitle}>💰 DETAILED SPENDING BREAKDOWN</h3>
                                     <table style={styles.dataTable}>
                                         <thead>
@@ -518,7 +532,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                         </>
                                     )}
 
-                                    {/* 🤖 BOT GENERATOR */}
+                                    {/* BOT GENERATOR */}
                                     <h3 style={styles.sectionTitle}>🤖 QUICK TEST DATA GENERATOR</h3>
                                     <div style={styles.botControls}>
                                         <button
@@ -540,18 +554,13 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                             🦹 Generate 3 Villains
                                         </button>
                                     </div>
-                                    <p style={{ fontSize: '0.7rem', color: '#8888cc', marginTop: '10px', textAlign: 'center' }}>
-                                        Uses <strong>RandomUser API</strong> to generate realistic test accounts (password: <code>botpassword123</code>)
-                                    </p>
 
-                                    {/* 📈 ANALYTICS CHARTS */}
+                                    {/* CHARTS */}
                                     <div style={{ marginTop: '30px' }}>
                                         <AdminCharts adminId={user.id} />
                                     </div>
                                 </>
                             )}
-
-
                         </div>
                     ) : (
                         <div>
@@ -571,15 +580,13 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                             <div style={styles.gearGrid}>
                                 {tab === 'inventory' ? (
                                     inventory.length === 0 ? (
-                                        <p style={{ textAlign: 'center', color: '#8888cc', fontSize: '0.8rem' }}>
-                                            No items in inventory
-                                        </p>
+                                        <p style={styles.emptyMsg}>No items in inventory</p>
                                     ) : (
                                         inventory.map(item => (
                                             <GearCard
                                                 key={item.inventoryId}
                                                 item={item}
-                                                actionLabel={canSell ? `SELL ₵${Math.floor(item.price * 0.5)}` : 'CANNOT SELL'}
+                                                actionLabel={canSell ? `SELL ₵${Math.floor(item.price * 0.5).toLocaleString()}` : 'CANNOT SELL'}
                                                 onAction={() => sell(item.inventoryId)}
                                                 disabled={!canSell}
                                                 actionColor="#00ff88"
@@ -588,9 +595,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     )
                                 ) : (
                                     catalog.length === 0 ? (
-                                        <p style={{ textAlign: 'center', color: '#8888cc', fontSize: '0.8rem' }}>
-                                            Loading gear...
-                                        </p>
+                                        <p style={styles.emptyMsg}>Loading gear...</p>
                                     ) : (
                                         catalog.map(item => (
                                             <GearCard
@@ -682,54 +687,83 @@ const styles = {
         fontFamily: 'monospace',
         padding: '20px'
     },
+
+    // ============================================
+    // HEADER - REORGANIZED
+    // ============================================
     header: {
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '20px',
+        alignItems: 'flex-start',
+        padding: '20px 25px',
         background: 'rgba(10, 10, 30, 0.85)',
         border: '1px solid rgba(0,240,255,0.2)',
         borderRadius: '12px',
         marginBottom: '20px',
         flexWrap: 'wrap',
-        gap: '15px'
+        gap: '20px'
+    },
+    logoSection: {
+        display: 'flex',
+        flexDirection: 'column'
     },
     logoTitle: {
         color: '#00f0ff',
         fontSize: '1.5rem',
-        margin: 0
+        margin: 0,
+        letterSpacing: '2px'
     },
     logoSub: {
         color: '#8888cc',
-        fontSize: '0.7rem',
+        fontSize: '0.65rem',
         letterSpacing: '4px',
         margin: 0
     },
-    userInfo: {
+    headerRight: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        alignItems: 'flex-end'
+    },
+    userRow: {
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        flexWrap: 'wrap'
+        gap: '10px'
+    },
+    userName: {
+        color: '#e0e0ff',
+        fontSize: '0.9rem',
+        fontWeight: 'bold'
     },
     roleBadge: {
         padding: '4px 12px',
         borderRadius: '12px',
+        fontSize: '0.65rem',
+        fontWeight: 'bold',
+        letterSpacing: '1px'
+    },
+    creditBadge: {
+        padding: '4px 12px',
+        background: 'rgba(0,255,136,0.1)',
+        border: '1px solid rgba(0,255,136,0.3)',
+        color: '#00ff88',
+        borderRadius: '12px',
         fontSize: '0.7rem',
         fontWeight: 'bold'
     },
-    toggleBtn: {
-        padding: '8px 12px',
-        background: 'rgba(0,240,255,0.1)',
-        border: '1px solid #00f0ff',
-        color: '#00f0ff',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontFamily: 'monospace',
-        fontSize: '0.9rem',
-        fontWeight: 'bold'
+    actionRow: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end'
     },
+
+    // ============================================
+    // BUTTONS
+    // ============================================
     combatBtn: {
-        padding: '8px 16px',
+        padding: '8px 14px',
         background: 'linear-gradient(90deg, #ff0044, #ff00ff)',
         border: 'none',
         color: 'white',
@@ -737,11 +771,12 @@ const styles = {
         cursor: 'pointer',
         fontFamily: 'monospace',
         fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
     },
     craftBtn: {
-        padding: '8px 16px',
+        padding: '8px 14px',
         background: 'linear-gradient(90deg, #ffaa00, #ff6600)',
         border: 'none',
         color: '#0a0a1a',
@@ -749,11 +784,12 @@ const styles = {
         cursor: 'pointer',
         fontFamily: 'monospace',
         fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
     },
     factionBtn: {
-        padding: '8px 16px',
+        padding: '8px 14px',
         background: 'linear-gradient(90deg, #00f0ff, #00ff88)',
         border: 'none',
         color: '#0a0a1a',
@@ -761,11 +797,25 @@ const styles = {
         cursor: 'pointer',
         fontFamily: 'monospace',
         fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
+    },
+    eventBtn: {
+        padding: '8px 14px',
+        background: 'linear-gradient(90deg, #ff00ff, #ffaa00)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
     },
     rewardBtn: {
-        padding: '8px 16px',
+        padding: '8px 14px',
         background: 'linear-gradient(90deg, #00ff88, #00f0ff)',
         border: 'none',
         color: '#0a0a1a',
@@ -773,19 +823,61 @@ const styles = {
         cursor: 'pointer',
         fontFamily: 'monospace',
         fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
+    },
+    chatBtn: {
+        padding: '8px 14px',
+        background: 'rgba(0,240,255,0.1)',
+        border: '1px solid rgba(0,240,255,0.3)',
+        color: '#8888cc',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap',
+        transition: 'all 0.2s'
+    },
+    chatBtnActive: {
+        background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
+        color: '#0a0a1a',
+        borderColor: 'transparent'
+    },
+    toggleBtn: {
+        padding: '8px 12px',
+        background: 'rgba(0,240,255,0.05)',
+        border: '1px solid rgba(0,240,255,0.2)',
+        color: '#8888cc',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontSize: '0.9rem',
+        fontWeight: 'bold',
+        transition: 'all 0.2s'
+    },
+    toggleBtnActive: {
+        background: 'rgba(0,240,255,0.15)',
+        borderColor: '#00f0ff',
+        color: '#00f0ff'
     },
     logoutBtn: {
-        padding: '8px 16px',
+        padding: '8px 12px',
         background: 'rgba(255,0,68,0.2)',
         border: '1px solid #ff0044',
         color: '#ff0044',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        fontSize: '0.9rem'
     },
+
+    // ============================================
+    // LAYOUT
+    // ============================================
     grid: {
         display: 'grid',
         gridTemplateColumns: '380px 1fr',
@@ -800,14 +892,17 @@ const styles = {
         background: 'rgba(10, 10, 30, 0.85)',
         border: '1px solid rgba(0,240,255,0.15)',
         borderRadius: '12px',
-        padding: '20px'
+        padding: '20px',
+        overflow: 'hidden'
     },
     panelTitle: {
         color: '#00f0ff',
         fontSize: '0.9rem',
         marginBottom: '15px',
         letterSpacing: '2px',
-        marginTop: 0
+        marginTop: 0,
+        paddingBottom: '10px',
+        borderBottom: '1px solid rgba(0,240,255,0.15)'
     },
     sectionTitle: {
         color: '#00f0ff',
@@ -816,10 +911,19 @@ const styles = {
         letterSpacing: '2px',
         marginTop: '20px'
     },
+
+    // ============================================
+    // PROFILE
+    // ============================================
     profileCard: {
         padding: '20px',
         background: 'rgba(0,240,255,0.05)',
         borderRadius: '10px'
+    },
+    profileName: {
+        marginBottom: '8px',
+        marginTop: 0,
+        color: '#e0e0ff'
     },
     statsGrid: {
         display: 'grid',
@@ -842,6 +946,10 @@ const styles = {
         color: '#8888cc',
         fontSize: '0.6rem'
     },
+
+    // ============================================
+    // MARKETPLACE
+    // ============================================
     tabs: {
         display: 'flex',
         gap: '5px',
@@ -851,21 +959,28 @@ const styles = {
         flex: 1,
         padding: '8px',
         background: 'transparent',
-        border: 'none',
+        border: '1px solid rgba(0,240,255,0.1)',
         color: '#8888cc',
         cursor: 'pointer',
         borderRadius: '6px',
         fontFamily: 'monospace',
         fontWeight: 'bold',
-        fontSize: '0.75rem'
+        fontSize: '0.7rem'
     },
     tabActive: {
         background: 'rgba(0,240,255,0.15)',
+        borderColor: '#00f0ff',
         color: '#00f0ff'
     },
     gearGrid: {
         display: 'grid',
         gap: '10px'
+    },
+    emptyMsg: {
+        textAlign: 'center',
+        color: '#8888cc',
+        fontSize: '0.8rem',
+        padding: '20px'
     },
     gearCard: {
         padding: '12px',
@@ -904,6 +1019,10 @@ const styles = {
         cursor: 'pointer',
         fontFamily: 'monospace'
     },
+
+    // ============================================
+    // ADMIN
+    // ============================================
     adminStats: {
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
@@ -945,22 +1064,6 @@ const styles = {
         borderBottom: '1px solid rgba(0,240,255,0.05)',
         color: '#e0e0ff'
     },
-    alert: {
-        padding: '12px',
-        borderRadius: '8px',
-        marginBottom: '15px',
-        fontSize: '0.8rem'
-    },
-    alertSuccess: {
-        background: 'rgba(0,255,136,0.1)',
-        border: '1px solid #00ff88',
-        color: '#00ff88'
-    },
-    alertError: {
-        background: 'rgba(255,0,68,0.1)',
-        border: '1px solid #ff0044',
-        color: '#ff0044'
-    },
     botControls: {
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -976,28 +1079,25 @@ const styles = {
         cursor: 'pointer',
         fontFamily: 'monospace'
     },
-    chatBtn: {
-        padding: '8px 16px',
-        background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
-        border: 'none',
-        color: '#0a0a1a',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontFamily: 'monospace',
-        fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
+
+    // ============================================
+    // ALERTS
+    // ============================================
+    alert: {
+        padding: '12px 16px',
+        borderRadius: '8px',
+        marginBottom: '15px',
+        fontSize: '0.8rem',
+        border: '1px solid'
     },
-    eventBtn: {
-        padding: '8px 16px',
-        background: 'linear-gradient(90deg, #ff00ff, #ffaa00)',
-        border: 'none',
-        color: '#0a0a1a',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontFamily: 'monospace',
-        fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
+    alertSuccess: {
+        background: 'rgba(0,255,136,0.1)',
+        borderColor: '#00ff88',
+        color: '#00ff88'
     },
+    alertError: {
+        background: 'rgba(255,0,68,0.1)',
+        borderColor: '#ff0044',
+        color: '#ff0044'
+    }
 };

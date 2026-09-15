@@ -146,6 +146,18 @@ $app->post('/api/events/score', \Aegis\Controllers\EventController::class . ':ad
 $app->post('/api/events/claim-rewards', \Aegis\Controllers\EventController::class . ':claimRewards');
 
 // ============================================
+// NOTIFICATION ROUTES
+// ============================================
+$app->get('/api/notifications/{id}', \Aegis\Controllers\NotificationController::class . ':getNotifications');
+$app->get('/api/notifications/{id}/unread-count', \Aegis\Controllers\NotificationController::class . ':getUnreadCount');
+$app->post('/api/notifications/create', \Aegis\Controllers\NotificationController::class . ':createNotification');
+$app->post('/api/notifications/{id}/read', \Aegis\Controllers\NotificationController::class . ':markAsRead');
+$app->post('/api/notifications/read-all', \Aegis\Controllers\NotificationController::class . ':markAllAsRead');
+$app->delete('/api/notifications/{id}', \Aegis\Controllers\NotificationController::class . ':deleteNotification');
+$app->post('/api/notifications/broadcast', \Aegis\Controllers\NotificationController::class . ':broadcast');
+
+
+// ============================================
 // ADMIN
 // ============================================
 $app->get('/api/admin/dashboard', \Aegis\Controllers\AdminController::class . ':getDashboard');

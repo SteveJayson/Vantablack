@@ -104,12 +104,27 @@ class MarketplaceController
             
             $this->logTransaction($combatant, 'purchase', $gear, 'completed', $newBalance, $creditsBefore);
             
+            // 🔔 Create notification
+try {
+    $stmt = $this->db->prepare("
+        INSERT INTO notifications 
+        (combatant_id, notification_type, title, message, icon, priority, created_at)
+        VALUES (?, 'purchase', ?, ?, '🛒', 'normal', NOW())
+    ");
+    $stmt->execute([
+        $combatantId,
+        "Purchase Successful",
+        "You bought {$gear['name']} for ₵" . number_format($gear['price'])
+    ]);
+} catch (\Exception $e) {}
+
             $this->db->commit();
             
             return $this->jsonResponse($response, 200, true, 'Purchase successful', [
                 'newBalance' => $newBalance,
                 'purchased' => $gear
             ]);
+
             
         } catch (\Exception $e) {
             $this->db->rollBack();
