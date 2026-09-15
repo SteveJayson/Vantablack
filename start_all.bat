@@ -1,17 +1,17 @@
 @echo off
-title Aegis and Anarchy - Full System
+title Vantablack - Full System
 color 0E
 
 echo ========================================
-echo    AEGIS AND ANARCHY - FULL SYSTEM
+echo    VANTABLACK - FULL SYSTEM
 echo ========================================
 echo.
 
 :: ============================================
 :: SET YOUR PATHS HERE
 :: ============================================
-set "BACKEND_PATH=C:\Users\ASUS\OneDrive\Desktop\project1\Vantablack\BACKEND\CODE_PHP"
-set "FRONTEND_PATH=C:\Users\ASUS\OneDrive\Desktop\project1\Vantablack\FRONT_END"
+set "BACKEND_PATH=%~dp0backend\CODE_PHP"
+set "FRONTEND_PATH=%~dp0FRONT_END"
 
 :: ============================================
 :: CHECK IF PATHS EXIST
@@ -62,7 +62,7 @@ echo URL: http://localhost:8080
 echo API: http://localhost:8080/api
 echo.
 
-start "Aegis Backend" cmd /k "cd /d "%BACKEND_PATH%" && echo Starting Backend... && php -S localhost:8080 -t public"
+start "Vantablack Backend" cmd /k "cd /d "%BACKEND_PATH%" && echo Starting Backend... && php -S localhost:8080 -t public"
 
 :: Wait for backend to start
 echo [WAIT] Starting backend...
@@ -79,7 +79,7 @@ echo.
 echo URL: http://localhost:5173
 echo.
 
-start "Aegis Frontend" cmd /k "cd /d "%FRONTEND_PATH%" && echo Starting Vite... && npm run dev"
+start "Vantablack Frontend" cmd /k "cd /d "%FRONTEND_PATH%" && echo Starting Vite... && npm run dev"
 
 :: Wait for frontend to start
 echo [WAIT] Starting frontend...

@@ -136,7 +136,7 @@ async function init() {
         // Periodic health check every 10 seconds
         setInterval(() => checkHealth(false), 10000);
 
-        console.log('✅ Aegis & Anarchy initialized');
+        console.log('✅ Vantablack initialized');
         console.log(`📡 API Base URL: ${getApiBaseUrl()}`);
     } catch (error) {
         console.error('❌ Initialization error:', error);
@@ -593,4 +593,4 @@ window.equipFromInventory = async (gearId) => {
 // ============================================
 document.addEventListener('DOMContentLoaded', init);
 
-console.log('🚀 Aegis & Anarchy Frontend Loaded');
+console.log('🚀 Vantablack Frontend Loaded');

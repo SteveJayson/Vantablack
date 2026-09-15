@@ -5,8 +5,8 @@
 const API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 // Auth token management
-const getToken = () => localStorage.getItem('aegis_token');
-const setToken = (token) => localStorage.setItem('aegis_token', token);
+const getToken = () => localStorage.getItem('vantablack_token') || localStorage.getItem('aegis_token');
+const setToken = (token) => localStorage.setItem('vantablack_token', token);
 
 // Helper for API requests
 const apiRequest = async (endpoint, options = {}) => {

@@ -3,123 +3,413 @@
 namespace Aegis\Controllers;
 
 use Aegis\Config\Database;
-use Aegis\Services\WeatherService;
 use PDO;
 
 class WeatherController
 {
     private PDO $db;
-    private WeatherService $weather;
+    private string $apiKey;
+    private string $baseUrl;
     
     public function __construct()
     {
         $this->db = Database::getConnection();
-        $this->weather = new WeatherService();
+        $this->apiKey = defined('ec74178dbcb33f3ebd64f1f7db7ee90e') ? OPENWEATHER_API_KEY : '';
+        $this->baseUrl = 'https://api.openweathermap.org/data/2.5';
+    }
+    
+    private function getQuery($request, string $key, $default = null)
+    {
+        $params = $request->getQueryParams();
+        return $params[$key] ?? $default;
     }
     
     /**
-     * GET /api/weather/current
+     * GET /api/weather/current?city=Manila
+     * Get current weather for a city
      */
     public function getCurrent($request, $response, $args)
     {
         try {
-            // ✅ FIXED: Use getQueryParams() for Slim 4
-            $queryParams = $request->getQueryParams();
-            $city = $queryParams['city'] ?? 'Manila';
-            $units = $queryParams['units'] ?? 'metric';
+            $city = $this->getQuery($request, 'city', 'Manila');
             
-            $weather = $this->weather->getCurrentWeather($city, $units);
+            // If no API key, return demo data
+            if (empty($this->apiKey) || $this->apiKey === 'YOUR_API_KEY_HERE') {
+                return $this->jsonResponse($response, 200, true, 'Weather (DEMO mode - add API key for real data)', [
+                    'demo_mode' => true,
+                    'city' => $city,
+                    'temperature' => 28,
+                    'feels_like' => 32,
+                    'condition' => 'Clear',
+                    'description' => 'clear sky',
+                    'humidity' => 75,
+                    'wind_speed' => 5.2,
+                    'icon' => '01d'
+                ]);
+            }
             
-            return $this->jsonResponse($response, 200, true, 'Weather retrieved', $weather);
+            $url = "{$this->baseUrl}/weather?q=" . urlencode($city) . "&appid={$this->apiKey}&units=metric";
+            $data = $this->callApi($url);
+            
+            if (!$data || isset($data['cod']) && $data['cod'] != 200) {
+                return $this->jsonResponse($response, 404, false, 'City not found or API error');
+            }
+            
+            return $this->jsonResponse($response, 200, true, 'Weather retrieved', [
+                'demo_mode' => false,
+                'city' => $data['name'],
+                'country' => $data['sys']['country'] ?? '',
+                'temperature' => round($data['main']['temp'], 1),
+                'feels_like' => round($data['main']['feels_like'], 1),
+                'temp_min' => round($data['main']['temp_min'], 1),
+                'temp_max' => round($data['main']['temp_max'], 1),
+                'condition' => $data['weather'][0]['main'],
+                'description' => $data['weather'][0]['description'],
+                'humidity' => $data['main']['humidity'],
+                'pressure' => $data['main']['pressure'],
+                'wind_speed' => $data['wind']['speed'],
+                'wind_degree' => $data['wind']['deg'] ?? 0,
+                'clouds' => $data['clouds']['all'] ?? 0,
+                'icon' => $data['weather'][0]['icon'],
+                'sunrise' => date('H:i', $data['sys']['sunrise']),
+                'sunset' => date('H:i', $data['sys']['sunset'])
+            ]);
+            
         } catch (\Exception $e) {
-            return $this->jsonResponse($response, 500, false, 'Weather error: ' . $e->getMessage());
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
         }
     }
     
     /**
-     * GET /api/weather/forecast
+     * GET /api/weather/forecast?city=Manila
+     * Get 5-day forecast
      */
     public function getForecast($request, $response, $args)
     {
         try {
-            // ✅ FIXED: Use getQueryParams() for Slim 4
-            $queryParams = $request->getQueryParams();
-            $city = $queryParams['city'] ?? 'Manila';
-            $days = (int)($queryParams['days'] ?? 5);
+            $city = $this->getQuery($request, 'city', 'Manila');
             
-            $forecast = $this->weather->getForecast($city, $days);
+            if (empty($this->apiKey) || $this->apiKey === 'YOUR_API_KEY_HERE') {
+                return $this->jsonResponse($response, 200, true, 'Forecast (DEMO mode)', [
+                    'demo_mode' => true,
+                    'city' => $city,
+                    'forecast' => [
+                        ['date' => date('Y-m-d', strtotime('+1 day')), 'temp' => 29, 'condition' => 'Clear', 'icon' => '01d'],
+                        ['date' => date('Y-m-d', strtotime('+2 day')), 'temp' => 27, 'condition' => 'Clouds', 'icon' => '03d'],
+                        ['date' => date('Y-m-d', strtotime('+3 day')), 'temp' => 26, 'condition' => 'Rain', 'icon' => '10d'],
+                        ['date' => date('Y-m-d', strtotime('+4 day')), 'temp' => 28, 'condition' => 'Clear', 'icon' => '01d'],
+                        ['date' => date('Y-m-d', strtotime('+5 day')), 'temp' => 30, 'condition' => 'Clouds', 'icon' => '02d'],
+                    ]
+                ]);
+            }
             
-            return $this->jsonResponse($response, 200, true, 'Forecast retrieved', $forecast);
+            $url = "{$this->baseUrl}/forecast?q=" . urlencode($city) . "&appid={$this->apiKey}&units=metric";
+            $data = $this->callApi($url);
+            
+            if (!$data || !isset($data['list'])) {
+                return $this->jsonResponse($response, 404, false, 'Forecast not available');
+            }
+            
+            // Group by day
+            $daily = [];
+            foreach ($data['list'] as $item) {
+                $date = date('Y-m-d', $item['dt']);
+                
+                if (!isset($daily[$date])) {
+                    $daily[$date] = [
+                        'date' => $date,
+                        'temps' => [],
+                        'conditions' => [],
+                        'icon' => $item['weather'][0]['icon']
+                    ];
+                }
+                
+                $daily[$date]['temps'][] = $item['main']['temp'];
+                $daily[$date]['conditions'][] = $item['weather'][0]['main'];
+            }
+            
+            $forecast = [];
+            foreach (array_slice($daily, 0, 5) as $day) {
+                $forecast[] = [
+                    'date' => $day['date'],
+                    'temp' => round(array_sum($day['temps']) / count($day['temps']), 1),
+                    'temp_high' => round(max($day['temps']), 1),
+                    'temp_low' => round(min($day['temps']), 1),
+                    'condition' => $this->getMostCommon($day['conditions']),
+                    'icon' => $day['icon']
+                ];
+            }
+            
+            return $this->jsonResponse($response, 200, true, 'Forecast retrieved', [
+                'demo_mode' => false,
+                'city' => $data['city']['name'],
+                'forecast' => $forecast
+            ]);
+            
         } catch (\Exception $e) {
-            return $this->jsonResponse($response, 500, false, 'Weather error: ' . $e->getMessage());
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
         }
     }
     
     /**
      * POST /api/weather/combat-impact
+     * Calculate how weather affects a combatant's loadout
      */
     public function getCombatImpact($request, $response, $args)
     {
         try {
             $body = json_decode($request->getBody()->getContents(), true);
             
-            if (!$body || !isset($body['combatantId'])) {
-                return $this->jsonResponse($response, 400, false, 'combatantId required');
-            }
-            
-            $combatantId = (int)$body['combatantId'];
             $city = $body['city'] ?? 'Manila';
+            $combatantId = $body['combatantId'] ?? null;
             
-            $stmt = $this->db->prepare("
-                SELECT id, name, bio_capacity_max, base_recovery, base_risk, role
-                FROM combatants WHERE id = ?
-            ");
-            $stmt->execute([$combatantId]);
-            $combatant = $stmt->fetch();
-            
-            if (!$combatant) {
-                return $this->jsonResponse($response, 404, false, 'Combatant not found');
+            // Get weather
+            $weather = null;
+            if (empty($this->apiKey) || $this->apiKey === 'YOUR_API_KEY_HERE') {
+                // Demo weather
+                $weather = [
+                    'temperature' => 28,
+                    'condition' => 'Clear',
+                    'humidity' => 75,
+                    'wind_speed' => 5.2
+                ];
+            } else {
+                $url = "{$this->baseUrl}/weather?q=" . urlencode($city) . "&appid={$this->apiKey}&units=metric";
+                $data = $this->callApi($url);
+                
+                if ($data && !isset($data['cod']) || $data['cod'] == 200) {
+                    $weather = [
+                        'temperature' => $data['main']['temp'],
+                        'condition' => $data['weather'][0]['main'],
+                        'humidity' => $data['main']['humidity'],
+                        'wind_speed' => $data['wind']['speed']
+                    ];
+                }
             }
             
-            $weather = $this->weather->getCurrentWeather($city);
-            $impact = $weather['energy_impact'];
+            if (!$weather) {
+                return $this->jsonResponse($response, 500, false, 'Could not fetch weather');
+            }
             
-            $adjustedBioCapacity = round($combatant['bio_capacity_max'] * $impact['drain_multiplier']);
-            $adjustedRecovery = round($combatant['base_recovery'] * $impact['recovery_multiplier'], 1);
-            $adjustedRisk = min(100, round($combatant['base_risk'] + (($impact['drain_multiplier'] - 1) * 50)));
+            // Calculate combat impact
+            $impact = $this->calculateCombatImpact($weather);
             
             return $this->jsonResponse($response, 200, true, 'Combat impact calculated', [
-                'combatant' => [
-                    'id' => (int)$combatant['id'],
-                    'name' => $combatant['name'],
-                    'role' => $combatant['role']
-                ],
-                'weather' => [
-                    'city' => $weather['city'],
-                    'temperature' => $weather['temperature'],
-                    'condition' => $weather['weather'],
-                    'humidity' => $weather['humidity']
-                ],
-                'base_stats' => [
-                    'bio_capacity' => (int)$combatant['bio_capacity_max'],
-                    'recovery' => (int)$combatant['base_recovery'],
-                    'risk' => (int)$combatant['base_risk']
-                ],
-                'adjusted_stats' => [
-                    'bio_capacity' => $adjustedBioCapacity,
-                    'recovery' => $adjustedRecovery,
-                    'risk' => $adjustedRisk
-                ],
-                'impact' => [
-                    'drain_multiplier' => $impact['drain_multiplier'],
-                    'recovery_multiplier' => $impact['recovery_multiplier'],
-                    'effect_summary' => $impact['effect_summary'],
-                    'warnings' => $impact['warnings']
-                ]
+                'city' => $city,
+                'weather' => $weather,
+                'impact' => $impact
             ]);
+            
         } catch (\Exception $e) {
             return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * GET /api/weather/combat-forecast?city=Manila
+     * 5-day forecast with combat impact
+     */
+    public function getCombatForecast($request, $response, $args)
+    {
+        try {
+            $city = $this->getQuery($request, 'city', 'Manila');
+            
+            // Get forecast
+            if (empty($this->apiKey) || $this->apiKey === 'YOUR_API_KEY_HERE') {
+                $forecast = [
+                    ['date' => date('Y-m-d', strtotime('+1 day')), 'temp' => 29, 'condition' => 'Clear'],
+                    ['date' => date('Y-m-d', strtotime('+2 day')), 'temp' => 27, 'condition' => 'Clouds'],
+                    ['date' => date('Y-m-d', strtotime('+3 day')), 'temp' => 26, 'condition' => 'Rain'],
+                    ['date' => date('Y-m-d', strtotime('+4 day')), 'temp' => 25, 'condition' => 'Thunderstorm'],
+                    ['date' => date('Y-m-d', strtotime('+5 day')), 'temp' => 28, 'condition' => 'Clear'],
+                ];
+            } else {
+                $url = "{$this->baseUrl}/forecast?q=" . urlencode($city) . "&appid={$this->apiKey}&units=metric";
+                $data = $this->callApi($url);
+                
+                $forecast = [];
+                if ($data && isset($data['list'])) {
+                    $daily = [];
+                    foreach ($data['list'] as $item) {
+                        $date = date('Y-m-d', $item['dt']);
+                        if (!isset($daily[$date])) {
+                            $daily[$date] = ['temps' => [], 'conditions' => []];
+                        }
+                        $daily[$date]['temps'][] = $item['main']['temp'];
+                        $daily[$date]['conditions'][] = $item['weather'][0]['main'];
+                    }
+                    
+                    foreach (array_slice($daily, 0, 5, true) as $date => $day) {
+                        $forecast[] = [
+                            'date' => $date,
+                            'temp' => round(array_sum($day['temps']) / count($day['temps']), 1),
+                            'condition' => $this->getMostCommon($day['conditions'])
+                        ];
+                    }
+                }
+            }
+            
+            // Add combat impact to each day
+            foreach ($forecast as &$day) {
+                $day['combat_impact'] = $this->calculateCombatImpact([
+                    'temperature' => $day['temp'],
+                    'condition' => $day['condition'],
+                    'humidity' => 70,
+                    'wind_speed' => 5
+                ]);
+            }
+            
+            return $this->jsonResponse($response, 200, true, 'Combat forecast retrieved', [
+                'city' => $city,
+                'forecast' => $forecast
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Calculate how weather affects combat
+     */
+    private function calculateCombatImpact(array $weather): array
+    {
+        $condition = $weather['condition'] ?? 'Clear';
+        $temp = $weather['temperature'] ?? 25;
+        
+        // Base impacts by condition
+        $impacts = [
+            'Clear' => [
+                'bio_drain_modifier' => 0,
+                'visibility' => 100,
+                'mobility' => 100,
+                'risk_modifier' => 0,
+                'description' => 'Perfect combat conditions'
+            ],
+            'Clouds' => [
+                'bio_drain_modifier' => -5,
+                'visibility' => 90,
+                'mobility' => 95,
+                'risk_modifier' => -2,
+                'description' => 'Slightly overcast, good conditions'
+            ],
+            'Rain' => [
+                'bio_drain_modifier' => 10,
+                'visibility' => 70,
+                'mobility' => 80,
+                'risk_modifier' => 5,
+                'description' => 'Wet conditions, reduced mobility'
+            ],
+            'Drizzle' => [
+                'bio_drain_modifier' => 5,
+                'visibility' => 85,
+                'mobility' => 90,
+                'risk_modifier' => 2,
+                'description' => 'Light rain, minor impact'
+            ],
+            'Thunderstorm' => [
+                'bio_drain_modifier' => 25,
+                'visibility' => 50,
+                'mobility' => 60,
+                'risk_modifier' => 15,
+                'description' => 'DANGEROUS! Extreme bio-drain'
+            ],
+            'Snow' => [
+                'bio_drain_modifier' => 15,
+                'visibility' => 60,
+                'mobility' => 70,
+                'risk_modifier' => 10,
+                'description' => 'Cold and slippery, increased drain'
+            ],
+            'Fog' => [
+                'bio_drain_modifier' => 5,
+                'visibility' => 30,
+                'mobility' => 90,
+                'risk_modifier' => 8,
+                'description' => 'Poor visibility, tactical disadvantage'
+            ],
+            'Mist' => [
+                'bio_drain_modifier' => 3,
+                'visibility' => 60,
+                'mobility' => 95,
+                'risk_modifier' => 4,
+                'description' => 'Light mist, minor visibility loss'
+            ],
+            'Haze' => [
+                'bio_drain_modifier' => 8,
+                'visibility' => 50,
+                'mobility' => 95,
+                'risk_modifier' => 6,
+                'description' => 'Poor air quality, increased strain'
+            ]
+        ];
+        
+        $baseImpact = $impacts[$condition] ?? $impacts['Clear'];
+        
+        // Temperature modifiers
+        $tempModifier = 0;
+        if ($temp > 35) {
+            $tempModifier = 15;
+        } elseif ($temp > 30) {
+            $tempModifier = 8;
+        } elseif ($temp < 0) {
+            $tempModifier = 20;
+        } elseif ($temp < 10) {
+            $tempModifier = 10;
+        }
+        
+        return [
+            'condition' => $condition,
+            'temperature' => $temp,
+            'bio_drain_modifier' => $baseImpact['bio_drain_modifier'] + $tempModifier,
+            'visibility' => max(0, $baseImpact['visibility']),
+            'mobility' => max(0, $baseImpact['mobility']),
+            'risk_modifier' => $baseImpact['risk_modifier'] + $tempModifier,
+            'description' => $baseImpact['description'],
+            'combat_rating' => $this->getCombatRating($baseImpact['bio_drain_modifier'] + $tempModifier)
+        ];
+    }
+    
+    private function getCombatRating(int $drain): array
+    {
+        if ($drain >= 30) {
+            return ['rating' => 'F', 'label' => '⚠️ EXTREME', 'color' => '#ff0044'];
+        } elseif ($drain >= 20) {
+            return ['rating' => 'D', 'label' => '🔴 DANGEROUS', 'color' => '#ff0044'];
+        } elseif ($drain >= 10) {
+            return ['rating' => 'C', 'label' => '🟠 CHALLENGING', 'color' => '#ffaa00'];
+        } elseif ($drain >= 5) {
+            return ['rating' => 'B', 'label' => '🟡 MODERATE', 'color' => '#ffaa00'];
+        } elseif ($drain > 0) {
+            return ['rating' => 'A', 'label' => '🟢 FAVORABLE', 'color' => '#00ff88'];
+        } else {
+            return ['rating' => 'S', 'label' => '💚 OPTIMAL', 'color' => '#00ff88'];
+        }
+    }
+    
+    private function getMostCommon(array $items): string
+    {
+        $counts = array_count_values($items);
+        arsort($counts);
+        return array_key_first($counts);
+    }
+    
+    private function callApi(string $url): ?array
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode !== 200) {
+            return null;
+        }
+        
+        return $response ? json_decode($response, true) : null;
     }
     
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
@@ -130,6 +420,7 @@ class WeatherController
             'message' => $message,
             'data' => $data
         ];
+        
         $response->getBody()->write(json_encode($payload));
         return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
     }

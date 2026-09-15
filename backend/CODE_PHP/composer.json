@@ -1,6 +1,6 @@
 {
-    "name": "aegis/backend",
-    "description": "Aegis & Anarchy Backend API",
+    "name": "vantablack/backend",
+    "description": "Vantablack Backend API",
     "type": "project",
     "require": {
         "php": "^8.0",
@@ -11,8 +11,5 @@
         "psr-4": {
             "Aegis\\": "src/"
         }
-    },
-    "scripts": {
-        "start": "php -S localhost:8080 -t public"
     }
 }

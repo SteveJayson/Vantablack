@@ -1,11 +1,11 @@
 @echo off
-title Aegis Control Panel
+title Vantablack Control Panel
 color 0F
 
 :MENU
 cls
 echo ========================================
-echo         AEGIS AND ANARCHY
+echo         VANTABLACK
 echo         CONTROL PANEL
 echo ========================================
 echo.

@@ -14,9 +14,6 @@ class AdminController
         $this->db = Database::getConnection();
     }
     
-    /**
-     * Helper: Get query parameter (Slim 4 compatible)
-     */
     private function getQuery($request, string $key, $default = null)
     {
         $params = $request->getQueryParams();
@@ -25,6 +22,7 @@ class AdminController
     
     /**
      * GET /api/admin/dashboard
+     * Complete admin dashboard with per-role transaction stats
      */
     public function getDashboard($request, $response, $args)
     {
@@ -35,31 +33,19 @@ class AdminController
                 return $this->jsonResponse($response, 403, false, 'Admin access required');
             }
             
-            // REGISTERED USERS BY ROLE (from combatants table)
+            // REGISTERED USERS BY ROLE
             $registered = ['civilian' => 0, 'hero' => 0, 'villain' => 0, 'admin' => 0];
-            
-            $stmt = $this->db->query("
-                SELECT role, COUNT(*) as count
-                FROM combatants
-                GROUP BY role
-            ");
-            
+            $stmt = $this->db->query("SELECT role, COUNT(*) as count FROM combatants GROUP BY role");
             foreach ($stmt->fetchAll() as $row) {
                 if (isset($registered[$row['role']])) {
                     $registered[$row['role']] = (int)$row['count'];
                 }
             }
             
-            // LOGGED IN USERS BY ROLE (from users table)
+            // LOGGED IN USERS BY ROLE
             $loggedIn = ['civilian' => 0, 'hero' => 0, 'villain' => 0, 'admin' => 0];
-            
             try {
-                $stmt = $this->db->query("
-                    SELECT role, COUNT(*) as count
-                    FROM users
-                    GROUP BY role
-                ");
-                
+                $stmt = $this->db->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
                 foreach ($stmt->fetchAll() as $row) {
                     if (isset($loggedIn[$row['role']])) {
                         $loggedIn[$row['role']] = (int)$row['count'];
@@ -69,7 +55,6 @@ class AdminController
             
             // ONLINE NOW
             $online = ['civilian' => 0, 'hero' => 0, 'villain' => 0, 'admin' => 0];
-            
             try {
                 $stmt = $this->db->query("
                     SELECT role, COUNT(*) as count
@@ -78,7 +63,6 @@ class AdminController
                         AND last_activity > DATE_SUB(NOW(), INTERVAL 30 MINUTE)
                     GROUP BY role
                 ");
-                
                 foreach ($stmt->fetchAll() as $row) {
                     if (isset($online[$row['role']])) {
                         $online[$row['role']] = (int)$row['count'];
@@ -86,17 +70,77 @@ class AdminController
                 }
             } catch (\Exception $e) {}
             
-            // TRANSACTION STATS
-            $txStats = [
-                'total_transactions' => 0,
-                'total_purchases' => 0,
-                'total_sells' => 0,
-                'completed_transactions' => 0,
-                'failed_transactions' => 0,
-                'total_revenue' => 0,
-                'total_payouts' => 0
+            // PURCHASES PER ROLE
+            $purchasesByRole = [
+                'civilian' => ['count' => 0, 'total_spent' => 0],
+                'hero' => ['count' => 0, 'total_spent' => 0],
+                'villain' => ['count' => 0, 'total_spent' => 0],
+                'admin' => ['count' => 0, 'total_spent' => 0]
             ];
+            try {
+                $stmt = $this->db->query("
+                    SELECT combatant_role, COUNT(*) as count, COALESCE(SUM(amount), 0) as total_spent
+                    FROM transactions
+                    WHERE transaction_type = 'purchase' AND status = 'completed'
+                    GROUP BY combatant_role
+                ");
+                foreach ($stmt->fetchAll() as $row) {
+                    $role = $row['combatant_role'];
+                    if (isset($purchasesByRole[$role])) {
+                        $purchasesByRole[$role] = [
+                            'count' => (int)$row['count'],
+                            'total_spent' => (int)$row['total_spent']
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {}
             
+            // SELLS PER ROLE
+            $sellsByRole = [
+                'civilian' => ['count' => 0, 'total_earned' => 0],
+                'hero' => ['count' => 0, 'total_earned' => 0],
+                'villain' => ['count' => 0, 'total_earned' => 0],
+                'admin' => ['count' => 0, 'total_earned' => 0]
+            ];
+            try {
+                $stmt = $this->db->query("
+                    SELECT combatant_role, COUNT(*) as count, COALESCE(SUM(amount), 0) as total_earned
+                    FROM transactions
+                    WHERE transaction_type = 'sell' AND status = 'completed'
+                    GROUP BY combatant_role
+                ");
+                foreach ($stmt->fetchAll() as $row) {
+                    $role = $row['combatant_role'];
+                    if (isset($sellsByRole[$role])) {
+                        $sellsByRole[$role] = [
+                            'count' => (int)$row['count'],
+                            'total_earned' => (int)$row['total_earned']
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {}
+            
+            // FAILED PER ROLE
+            $failedByRole = ['civilian' => 0, 'hero' => 0, 'villain' => 0, 'admin' => 0];
+            try {
+                $stmt = $this->db->query("
+                    SELECT combatant_role, COUNT(*) as count
+                    FROM transactions WHERE status = 'failed'
+                    GROUP BY combatant_role
+                ");
+                foreach ($stmt->fetchAll() as $row) {
+                    if (isset($failedByRole[$row['combatant_role']])) {
+                        $failedByRole[$row['combatant_role']] = (int)$row['count'];
+                    }
+                }
+            } catch (\Exception $e) {}
+            
+            // OVERALL TRANSACTION STATS
+            $txStats = [
+                'total_transactions' => 0, 'total_purchases' => 0, 'total_sells' => 0,
+                'completed_transactions' => 0, 'failed_transactions' => 0,
+                'total_revenue' => 0, 'total_payouts' => 0
+            ];
             try {
                 $stmt = $this->db->query("
                     SELECT 
@@ -112,14 +156,26 @@ class AdminController
                 $txStats = $stmt->fetch();
             } catch (\Exception $e) {}
             
+            // TOP SPENDERS
+            $topSpenders = [];
+            try {
+                $stmt = $this->db->query("
+                    SELECT 
+                        combatant_id, combatant_name, combatant_role,
+                        COUNT(*) as purchase_count, SUM(amount) as total_spent
+                    FROM transactions
+                    WHERE transaction_type = 'purchase' AND status = 'completed'
+                    GROUP BY combatant_id, combatant_name, combatant_role
+                    ORDER BY total_spent DESC
+                    LIMIT 10
+                ");
+                $topSpenders = $stmt->fetchAll();
+            } catch (\Exception $e) {}
+            
             // RECENT TRANSACTIONS
             $recentTransactions = [];
             try {
-                $stmt = $this->db->query("
-                    SELECT * FROM transactions 
-                    ORDER BY created_at DESC 
-                    LIMIT 10
-                ");
+                $stmt = $this->db->query("SELECT * FROM transactions ORDER BY created_at DESC LIMIT 20");
                 $recentTransactions = $stmt->fetchAll();
             } catch (\Exception $e) {}
             
@@ -127,16 +183,10 @@ class AdminController
             $recentLogins = [];
             try {
                 $stmt = $this->db->query("
-                    SELECT 
-                        lh.id,
-                        lh.username,
-                        lh.role,
-                        lh.login_at,
-                        c.name as combatant_name
+                    SELECT lh.id, lh.username, lh.role, lh.login_at, c.name as combatant_name
                     FROM login_history lh
                     JOIN combatants c ON lh.combatant_id = c.id
-                    ORDER BY lh.login_at DESC
-                    LIMIT 10
+                    ORDER BY lh.login_at DESC LIMIT 10
                 ");
                 $recentLogins = $stmt->fetchAll();
             } catch (\Exception $e) {}
@@ -163,12 +213,35 @@ class AdminController
                     'admins' => $online['admin'],
                     'total' => array_sum($online)
                 ],
-                'users' => [
-                    'civilians' => $registered['civilian'],
-                    'heroes' => $registered['hero'],
-                    'villains' => $registered['villain'],
-                    'admins' => $registered['admin'],
-                    'total' => array_sum($registered)
+                'spending_by_role' => [
+                    'civilians' => [
+                        'purchase_count' => $purchasesByRole['civilian']['count'],
+                        'total_spent' => $purchasesByRole['civilian']['total_spent'],
+                        'sell_count' => $sellsByRole['civilian']['count'],
+                        'total_earned' => $sellsByRole['civilian']['total_earned'],
+                        'failed_transactions' => $failedByRole['civilian']
+                    ],
+                    'heroes' => [
+                        'purchase_count' => $purchasesByRole['hero']['count'],
+                        'total_spent' => $purchasesByRole['hero']['total_spent'],
+                        'sell_count' => $sellsByRole['hero']['count'],
+                        'total_earned' => $sellsByRole['hero']['total_earned'],
+                        'failed_transactions' => $failedByRole['hero']
+                    ],
+                    'villains' => [
+                        'purchase_count' => $purchasesByRole['villain']['count'],
+                        'total_spent' => $purchasesByRole['villain']['total_spent'],
+                        'sell_count' => $sellsByRole['villain']['count'],
+                        'total_earned' => $sellsByRole['villain']['total_earned'],
+                        'failed_transactions' => $failedByRole['villain']
+                    ],
+                    'admins' => [
+                        'purchase_count' => $purchasesByRole['admin']['count'],
+                        'total_spent' => $purchasesByRole['admin']['total_spent'],
+                        'sell_count' => $sellsByRole['admin']['count'],
+                        'total_earned' => $sellsByRole['admin']['total_earned'],
+                        'failed_transactions' => $failedByRole['admin']
+                    ]
                 ],
                 'transactions' => [
                     'total' => (int)($txStats['total_transactions'] ?? 0),
@@ -179,8 +252,126 @@ class AdminController
                     'total_revenue' => (int)($txStats['total_revenue'] ?? 0),
                     'total_payouts' => (int)($txStats['total_payouts'] ?? 0)
                 ],
+                'top_spenders' => $topSpenders,
                 'recent_transactions' => $recentTransactions,
                 'recent_logins' => $recentLogins
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * GET /api/admin/spending-report
+     */
+    public function getSpendingReport($request, $response, $args)
+    {
+        try {
+            $adminId = $this->getQuery($request, 'adminId');
+            
+            if (!$this->isAdmin($adminId)) {
+                return $this->jsonResponse($response, 403, false, 'Admin access required');
+            }
+            
+            $stmt = $this->db->query("
+                SELECT 
+                    combatant_role, transaction_type,
+                    COUNT(*) as transaction_count,
+                    COALESCE(SUM(amount), 0) as total_amount,
+                    COALESCE(AVG(amount), 0) as avg_amount
+                FROM transactions
+                WHERE status = 'completed'
+                GROUP BY combatant_role, transaction_type
+                ORDER BY combatant_role, transaction_type
+            ");
+            $breakdown = $stmt->fetchAll();
+            
+            $stmt = $this->db->query("
+                SELECT 
+                    DATE(created_at) as date, combatant_role, transaction_type,
+                    COUNT(*) as count, COALESCE(SUM(amount), 0) as total
+                FROM transactions
+                WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY DATE(created_at), combatant_role, transaction_type
+                ORDER BY date DESC
+            ");
+            $trend = $stmt->fetchAll();
+            
+            $stmt = $this->db->query("
+                SELECT gear_id, gear_name, COUNT(*) as purchase_count, SUM(amount) as total_revenue
+                FROM transactions
+                WHERE transaction_type = 'purchase' AND status = 'completed'
+                GROUP BY gear_id, gear_name
+                ORDER BY purchase_count DESC
+                LIMIT 10
+            ");
+            $topGear = $stmt->fetchAll();
+            
+            return $this->jsonResponse($response, 200, true, 'Spending report retrieved', [
+                'breakdown' => $breakdown,
+                'trend' => $trend,
+                'top_gear' => $topGear
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * GET /api/admin/role-transactions?role=hero
+     */
+    public function getRoleTransactions($request, $response, $args)
+    {
+        try {
+            $adminId = $this->getQuery($request, 'adminId');
+            $role = $this->getQuery($request, 'role');
+            
+            if (!$this->isAdmin($adminId)) {
+                return $this->jsonResponse($response, 403, false, 'Admin access required');
+            }
+            
+            $query = "SELECT * FROM transactions WHERE 1=1";
+            $params = [];
+            
+            if ($role && in_array($role, ['civilian', 'hero', 'villain'])) {
+                $query .= " AND combatant_role = ?";
+                $params[] = $role;
+            }
+            
+            $query .= " ORDER BY created_at DESC LIMIT 100";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+            $transactions = $stmt->fetchAll();
+            
+            $totalSpent = 0;
+            $totalEarned = 0;
+            $purchaseCount = 0;
+            $sellCount = 0;
+            
+            foreach ($transactions as $t) {
+                if ($t['transaction_type'] === 'purchase' && $t['status'] === 'completed') {
+                    $totalSpent += (int)$t['amount'];
+                    $purchaseCount++;
+                } elseif ($t['transaction_type'] === 'sell' && $t['status'] === 'completed') {
+                    $totalEarned += (int)$t['amount'];
+                    $sellCount++;
+                }
+            }
+            
+            return $this->jsonResponse($response, 200, true, 'Role transactions retrieved', [
+                'role' => $role,
+                'summary' => [
+                    'total_purchases' => $purchaseCount,
+                    'total_spent' => $totalSpent,
+                    'total_sells' => $sellCount,
+                    'total_earned' => $totalEarned,
+                    'net_flow' => $totalSpent - $totalEarned
+                ],
+                'transactions' => $transactions,
+                'total' => count($transactions)
             ]);
             
         } catch (\Exception $e) {
@@ -207,9 +398,11 @@ class AdminController
                 c.bio_capacity_max as bioCapacityMax,
                 c.clearance_level as clearanceLevel,
                 c.created_at as createdAt,
-                u.username,
-                u.login_count as loginCount,
-                u.last_login as lastLogin
+                u.username, u.login_count as loginCount, u.last_login as lastLogin,
+                (SELECT COUNT(*) FROM transactions WHERE combatant_id = c.id AND transaction_type = 'purchase' AND status = 'completed') as total_purchases,
+                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE combatant_id = c.id AND transaction_type = 'purchase' AND status = 'completed') as total_spent,
+                (SELECT COUNT(*) FROM transactions WHERE combatant_id = c.id AND transaction_type = 'sell' AND status = 'completed') as total_sells,
+                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE combatant_id = c.id AND transaction_type = 'sell' AND status = 'completed') as total_earned
             FROM combatants c
             LEFT JOIN users u ON c.id = u.combatant_id";
             
@@ -235,9 +428,6 @@ class AdminController
         }
     }
     
-    /**
-     * GET /api/admin/transactions
-     */
     public function getTransactions($request, $response, $args)
     {
         try {
@@ -249,11 +439,7 @@ class AdminController
             
             $limit = (int)$this->getQuery($request, 'limit', 50);
             
-            $stmt = $this->db->prepare("
-                SELECT * FROM transactions 
-                ORDER BY created_at DESC 
-                LIMIT ?
-            ");
+            $stmt = $this->db->prepare("SELECT * FROM transactions ORDER BY created_at DESC LIMIT ?");
             $stmt->execute([$limit]);
             $transactions = $stmt->fetchAll();
             
@@ -267,9 +453,6 @@ class AdminController
         }
     }
     
-    /**
-     * GET /api/admin/users/{id}/transactions
-     */
     public function getUserTransactions($request, $response, $args)
     {
         try {
@@ -284,7 +467,12 @@ class AdminController
                 return $this->jsonResponse($response, 400, false, 'User ID required');
             }
             
-            $stmt = $this->db->prepare("SELECT id, name, role FROM combatants WHERE id = ?");
+            $stmt = $this->db->prepare("
+                SELECT c.id, c.name, c.role, u.username
+                FROM combatants c
+                LEFT JOIN users u ON c.id = u.combatant_id
+                WHERE c.id = ?
+            ");
             $stmt->execute([$userId]);
             $user = $stmt->fetch();
             
@@ -293,15 +481,31 @@ class AdminController
             }
             
             $stmt = $this->db->prepare("
-                SELECT * FROM transactions 
-                WHERE combatant_id = ?
-                ORDER BY created_at DESC
+                SELECT * FROM transactions WHERE combatant_id = ? ORDER BY created_at DESC
             ");
             $stmt->execute([$userId]);
             $transactions = $stmt->fetchAll();
             
+            $totalSpent = 0;
+            $totalEarned = 0;
+            
+            foreach ($transactions as $t) {
+                if ($t['status'] === 'completed') {
+                    if ($t['transaction_type'] === 'purchase') {
+                        $totalSpent += (int)$t['amount'];
+                    } else {
+                        $totalEarned += (int)$t['amount'];
+                    }
+                }
+            }
+            
             return $this->jsonResponse($response, 200, true, 'User transactions retrieved', [
                 'user' => $user,
+                'summary' => [
+                    'total_spent' => $totalSpent,
+                    'total_earned' => $totalEarned,
+                    'net' => $totalEarned - $totalSpent
+                ],
                 'transactions' => $transactions,
                 'total' => count($transactions)
             ]);
@@ -311,9 +515,6 @@ class AdminController
         }
     }
     
-    /**
-     * GET /api/admin/login-history
-     */
     public function getLoginHistory($request, $response, $args)
     {
         try {
@@ -326,13 +527,10 @@ class AdminController
             $limit = (int)$this->getQuery($request, 'limit', 50);
             
             $stmt = $this->db->prepare("
-                SELECT 
-                    lh.*,
-                    c.name as combatant_name
+                SELECT lh.*, c.name as combatant_name
                 FROM login_history lh
                 JOIN combatants c ON lh.combatant_id = c.id
-                ORDER BY lh.login_at DESC 
-                LIMIT ?
+                ORDER BY lh.login_at DESC LIMIT ?
             ");
             $stmt->execute([$limit]);
             $history = $stmt->fetchAll();

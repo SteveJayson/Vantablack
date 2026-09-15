@@ -22,6 +22,7 @@ class AuthController
     
     /**
      * POST /api/auth/register
+     * Only allows civilian, hero, villain (NO ADMIN)
      */
     public function register($request, $response, $args)
     {
@@ -50,9 +51,10 @@ class AuthController
                 return $this->jsonResponse($response, 400, false, 'Password must be at least 6 characters');
             }
             
-            if (!in_array($role, ['civilian', 'hero', 'villain', 'admin'])) {
+            // BLOCK ADMIN REGISTRATION
+            if (!in_array($role, ['civilian', 'hero', 'villain'])) {
                 $this->db->rollBack();
-                return $this->jsonResponse($response, 400, false, 'Invalid role');
+                return $this->jsonResponse($response, 400, false, 'Invalid role. Admin accounts cannot be registered publicly.');
             }
             
             // Check username
@@ -266,12 +268,175 @@ class AuthController
             'roles' => [
                 ['id' => 'civilian', 'name' => 'Civilian', 'icon' => '👤', 'color' => '#ffaa00'],
                 ['id' => 'hero', 'name' => 'Hero', 'icon' => '🦸', 'color' => '#00f0ff'],
-                ['id' => 'villain', 'name' => 'Villain', 'icon' => '🦹', 'color' => '#ff0044'],
-                ['id' => 'admin', 'name' => 'Admin', 'icon' => '👑', 'color' => '#ff00ff']
+                ['id' => 'villain', 'name' => 'Villain', 'icon' => '🦹', 'color' => '#ff0044']
             ]
         ]);
     }
     
+    /**
+     * POST /api/auth/forgot-password
+     * Step 1: User enters username, gets reset token
+     */
+    public function forgotPassword($request, $response, $args)
+    {
+        try {
+            $body = json_decode($request->getBody()->getContents(), true);
+            $username = trim($body['username'] ?? '');
+            
+            if (empty($username)) {
+                return $this->jsonResponse($response, 400, false, 'Username required');
+            }
+            
+            // Check if user exists
+            $stmt = $this->db->prepare("
+                SELECT u.id, u.username, c.name 
+                FROM users u
+                JOIN combatants c ON u.combatant_id = c.id
+                WHERE u.username = ?
+            ");
+            $stmt->execute([$username]);
+            $user = $stmt->fetch();
+            
+            if (!$user) {
+                // For security, don't reveal if user exists
+                return $this->jsonResponse($response, 404, false, 'Username not found. Please check and try again.');
+            }
+            
+            // Generate reset token
+            $resetToken = bin2hex(random_bytes(32));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+            
+            // Save token
+            $stmt = $this->db->prepare("
+                UPDATE users 
+                SET reset_token = ?, reset_token_expires = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$resetToken, $expiresAt, $user['id']]);
+            
+            return $this->jsonResponse($response, 200, true, 'Reset token generated', [
+                'reset_token' => $resetToken,
+                'username' => $user['username'],
+                'name' => $user['name'],
+                'expires_in' => '15 minutes',
+                'note' => 'In production, this would be emailed to the user'
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * POST /api/auth/reset-password
+     * Step 2: User submits token + new password
+     */
+    public function resetPassword($request, $response, $args)
+    {
+        $this->db->beginTransaction();
+        
+        try {
+            $body = json_decode($request->getBody()->getContents(), true);
+            
+            $username = trim($body['username'] ?? '');
+            $resetToken = trim($body['reset_token'] ?? '');
+            $newPassword = $body['new_password'] ?? '';
+            
+            if (empty($username) || empty($resetToken) || empty($newPassword)) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 400, false, 'Username, reset token, and new password required');
+            }
+            
+            if (strlen($newPassword) < 6) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 400, false, 'Password must be at least 6 characters');
+            }
+            
+            // Find user with matching token
+            $stmt = $this->db->prepare("
+                SELECT id, username, reset_token, reset_token_expires
+                FROM users
+                WHERE username = ? AND reset_token = ?
+            ");
+            $stmt->execute([$username, $resetToken]);
+            $user = $stmt->fetch();
+            
+            if (!$user) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 400, false, 'Invalid username or reset token');
+            }
+            
+            // Check if token expired
+            if (strtotime($user['reset_token_expires']) < time()) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 400, false, 'Reset token has expired. Please request a new one.');
+            }
+            
+            // Update password
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            $stmt = $this->db->prepare("
+                UPDATE users 
+                SET password_hash = ?, 
+                    reset_token = NULL, 
+                    reset_token_expires = NULL,
+                    session_token = NULL,
+                    is_online = FALSE
+                WHERE id = ?
+            ");
+            $stmt->execute([$passwordHash, $user['id']]);
+            
+            $this->db->commit();
+            
+            return $this->jsonResponse($response, 200, true, 'Password reset successful! You can now login.', [
+                'username' => $user['username']
+            ]);
+            
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * GET /api/auth/verify-reset-token?username=X&token=Y
+     * Verify if reset token is valid
+     */
+    public function verifyResetToken($request, $response, $args)
+    {
+        try {
+            $username = $this->getQuery($request, 'username');
+            $token = $this->getQuery($request, 'token');
+            
+            if (empty($username) || empty($token)) {
+                return $this->jsonResponse($response, 400, false, 'Username and token required');
+            }
+            
+            $stmt = $this->db->prepare("
+                SELECT reset_token_expires FROM users
+                WHERE username = ? AND reset_token = ?
+            ");
+            $stmt->execute([$username, $token]);
+            $user = $stmt->fetch();
+            
+            if (!$user) {
+                return $this->jsonResponse($response, 400, false, 'Invalid token');
+            }
+            
+            if (strtotime($user['reset_token_expires']) < time()) {
+                return $this->jsonResponse($response, 400, false, 'Token expired');
+            }
+            
+            return $this->jsonResponse($response, 200, true, 'Token valid');
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Helper: Log login to history
+     */
     private function logLogin(int $userId, int $combatantId, string $username, string $role): void
     {
         try {
@@ -284,18 +449,44 @@ class AuthController
         } catch (\Exception $e) {}
     }
     
+    /**
+     * Helper: Get role starting config
+     */
     private function getRoleConfig(string $role): array
     {
         $configs = [
-            'civilian' => ['credits' => 500, 'bio_capacity' => 100, 'recovery' => 1, 'risk' => 5, 'faction' => 'hero', 'clearance' => 1],
-            'hero' => ['credits' => 5000, 'bio_capacity' => 1200, 'recovery' => 3, 'risk' => 10, 'faction' => 'hero', 'clearance' => 2],
-            'villain' => ['credits' => 5000, 'bio_capacity' => 1100, 'recovery' => 4, 'risk' => 15, 'faction' => 'villain', 'clearance' => 2],
-            'admin' => ['credits' => 999999, 'bio_capacity' => 0, 'recovery' => 0, 'risk' => 0, 'faction' => 'hero', 'clearance' => 5]
+            'civilian' => [
+                'credits' => 500,
+                'bio_capacity' => 100,
+                'recovery' => 1,
+                'risk' => 5,
+                'faction' => 'hero',
+                'clearance' => 1
+            ],
+            'hero' => [
+                'credits' => 5000,
+                'bio_capacity' => 1200,
+                'recovery' => 3,
+                'risk' => 10,
+                'faction' => 'hero',
+                'clearance' => 2
+            ],
+            'villain' => [
+                'credits' => 5000,
+                'bio_capacity' => 1100,
+                'recovery' => 4,
+                'risk' => 15,
+                'faction' => 'villain',
+                'clearance' => 2
+            ]
         ];
         
         return $configs[$role] ?? $configs['civilian'];
     }
     
+    /**
+     * Helper: Get token from Authorization header
+     */
     private function getToken($request): ?string
     {
         $authHeader = $request->getHeaderLine('Authorization');
@@ -305,6 +496,9 @@ class AuthController
         return null;
     }
     
+    /**
+     * Helper: JSON response
+     */
     private function jsonResponse($response, int $status, bool $success, string $message, array $data = [])
     {
         $payload = [

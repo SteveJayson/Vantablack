@@ -1,9 +1,9 @@
 @echo off
-title Aegis & Anarchy - Backend Server
+title Vantablack - Backend Server
 color 0A
 
 echo ========================================
-echo    AEGIS & ANARCHY BACKEND SERVER
+echo    VANTABLACK BACKEND SERVER
 echo ========================================
 echo.
 

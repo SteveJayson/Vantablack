@@ -13,9 +13,15 @@ define('DB_NAME', 'aegis_db');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 
+// ============================================
+// 3RD PARTY API KEYS
+// ============================================
+// Get your free API key at: https://openweathermap.org/api
+// Replace the placeholder below with your actual key
+define('OPENWEATHER_API_KEY', 'ec74178dbcb33f3ebd64f1f7db7ee90e');
+
 $app = AppFactory::create();
 
-// CORS
 $app->add(function ($request, $handler) {
     $response = $handler->handle($request);
     return $response
@@ -32,13 +38,18 @@ $app->options('/{routes:.+}', function ($request, $response, $args) {
 });
 
 // ============================================
-// AUTH ROUTES
+// AUTH
 // ============================================
 $app->post('/api/auth/register', \Aegis\Controllers\AuthController::class . ':register');
 $app->post('/api/auth/login', \Aegis\Controllers\AuthController::class . ':login');
 $app->get('/api/auth/me', \Aegis\Controllers\AuthController::class . ':me');
 $app->post('/api/auth/logout', \Aegis\Controllers\AuthController::class . ':logout');
 $app->get('/api/auth/roles', \Aegis\Controllers\AuthController::class . ':getRoles');
+
+// FORGOT PASSWORD
+$app->post('/api/auth/forgot-password', \Aegis\Controllers\AuthController::class . ':forgotPassword');
+$app->post('/api/auth/reset-password', \Aegis\Controllers\AuthController::class . ':resetPassword');
+$app->get('/api/auth/verify-reset-token', \Aegis\Controllers\AuthController::class . ':verifyResetToken');
 
 // ============================================
 // COMBATANTS
@@ -76,7 +87,7 @@ $app->get('/api/analytics/{id}/battle-history', \Aegis\Controllers\AnalyticsCont
 $app->post('/api/analytics/{id}/sync', \Aegis\Controllers\AnalyticsController::class . ':syncStats');
 
 // ============================================
-// MISSIONS (static routes first!)
+// MISSIONS
 // ============================================
 $app->get('/api/missions/leaderboard', \Aegis\Controllers\MissionController::class . ':getLeaderboard');
 $app->post('/api/missions/complete', \Aegis\Controllers\MissionController::class . ':completeMission');
@@ -87,23 +98,45 @@ $app->get('/api/missions/{id}', \Aegis\Controllers\MissionController::class . ':
 // ADMIN
 // ============================================
 $app->get('/api/admin/dashboard', \Aegis\Controllers\AdminController::class . ':getDashboard');
+$app->get('/api/admin/spending-report', \Aegis\Controllers\AdminController::class . ':getSpendingReport');
+$app->get('/api/admin/role-transactions', \Aegis\Controllers\AdminController::class . ':getRoleTransactions');
 $app->get('/api/admin/transactions', \Aegis\Controllers\AdminController::class . ':getTransactions');
 $app->get('/api/admin/users', \Aegis\Controllers\AdminController::class . ':getUsers');
 $app->get('/api/admin/users/{id}/transactions', \Aegis\Controllers\AdminController::class . ':getUserTransactions');
 $app->get('/api/admin/login-history', \Aegis\Controllers\AdminController::class . ':getLoginHistory');
 
 // ============================================
+// WEATHER (3RD PARTY API - OpenWeatherMap)
+// ============================================
+$app->get('/api/weather/current', \Aegis\Controllers\WeatherController::class . ':getCurrent');
+$app->get('/api/weather/forecast', \Aegis\Controllers\WeatherController::class . ':getForecast');
+$app->post('/api/weather/combat-impact', \Aegis\Controllers\WeatherController::class . ':getCombatImpact');
+$app->get('/api/weather/combat-forecast', \Aegis\Controllers\WeatherController::class . ':getCombatForecast');
+
+// ============================================
 // HEALTH
 // ============================================
 $app->get('/api/health', function ($request, $response, $args) {
+    $apiKey = defined('OPENWEATHER_API_KEY') ? OPENWEATHER_API_KEY : '';
+    $weatherEnabled = !empty($apiKey) && $apiKey !== 'YOUR_API_KEY_HERE';
+    
     $payload = [
         'status' => 200,
         'success' => true,
         'message' => 'Aegis & Anarchy API is running!',
         'data' => [
-            'version' => '4.0.0',
+            'version' => '5.0.0',
             'timestamp' => date('Y-m-d H:i:s'),
-            'features' => ['auth', 'analytics', 'missions', 'admin', 'marketplace', 'roles']
+            'features' => [
+                'auth' => true,
+                'analytics' => true,
+                'missions' => true,
+                'admin' => true,
+                'marketplace' => true,
+                'roles' => true,
+                'weather' => $weatherEnabled,
+                'weather_mode' => $weatherEnabled ? 'LIVE' : 'DEMO'
+            ]
         ]
     ];
     $response->getBody()->write(json_encode($payload));
@@ -112,7 +145,15 @@ $app->get('/api/health', function ($request, $response, $args) {
 
 // 404
 $app->map(['GET', 'POST', 'PUT', 'DELETE'], '/{routes:.+}', function ($request, $response, $args) {
-    $payload = ['status' => 404, 'success' => false, 'message' => 'Route not found', 'data' => []];
+    $payload = [
+        'status' => 404,
+        'success' => false,
+        'message' => 'Route not found',
+        'data' => [
+            'url' => (string)$request->getUri()->getPath(),
+            'method' => $request->getMethod()
+        ]
+    ];
     $response->getBody()->write(json_encode($payload));
     return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
 });

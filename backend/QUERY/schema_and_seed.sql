@@ -165,7 +165,7 @@ SELECT
     (SELECT COUNT(*) FROM achievements) as total_achievements;
 
     -- ============================================
--- AEGIS & ANARCHY - COMPLETE SCHEMA v3.0
+-- VANTABLACK - COMPLETE SCHEMA v3.0
 -- With Roles, Transactions, and Admin
 -- ============================================
 
@@ -709,7 +709,7 @@ SELECT
     (SELECT COUNT(*) FROM achievements) as total_achievements;
 
     -- ============================================
--- AEGIS & ANARCHY - COMPLETE SCHEMA v3.0
+-- VANTABLACK - COMPLETE SCHEMA v3.0
 -- With Roles, Transactions, and Admin
 -- ============================================
 
