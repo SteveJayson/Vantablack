@@ -80,7 +80,7 @@ export default function CurrencyWidget({ credits }) {
                             <div style={styles.creditsValue}>
                                 ₵{(credits || 0).toLocaleString()}
                             </div>
-                            <div style={styles.label}>AEGIS</div>
+                            <div style={styles.label}>CREDITS</div>
                         </div>
 
                         <div style={styles.equals}>≈</div>

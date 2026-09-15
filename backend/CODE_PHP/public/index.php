@@ -95,6 +95,22 @@ $app->get('/api/missions', \Aegis\Controllers\MissionController::class . ':getMi
 $app->get('/api/missions/{id}', \Aegis\Controllers\MissionController::class . ':getMission');
 
 // ============================================
+// COMBAT ROUTES (Feature #1)
+// ============================================
+$app->get('/api/combat/opponents', \Aegis\Controllers\CombatController::class . ':getOpponents');
+$app->post('/api/combat/simulate', \Aegis\Controllers\CombatController::class . ':simulate');
+$app->get('/api/combat/history/{id}', \Aegis\Controllers\CombatController::class . ':getHistory');
+$app->get('/api/combat/leaderboard', \Aegis\Controllers\CombatController::class . ':getLeaderboard');
+
+// ============================================
+// CRAFTING ROUTES
+// ============================================
+$app->get('/api/crafting/recipes', \Aegis\Controllers\CraftingController::class . ':getRecipes');
+$app->post('/api/crafting/craft', \Aegis\Controllers\CraftingController::class . ':craft');
+$app->get('/api/crafting/history/{id}', \Aegis\Controllers\CraftingController::class . ':getHistory');
+$app->post('/api/crafting/disassemble', \Aegis\Controllers\CraftingController::class . ':disassemble');
+
+// ============================================
 // ADMIN
 // ============================================
 $app->get('/api/admin/dashboard', \Aegis\Controllers\AdminController::class . ':getDashboard');
@@ -133,7 +149,7 @@ $app->get('/api/health', function ($request, $response, $args) {
     $payload = [
         'status' => 200,
         'success' => true,
-        'message' => 'Aegis & Anarchy API is running!',
+        'message' => 'Vantablack API is running!',
         'data' => [
             'version' => '5.0.0',
             'timestamp' => date('Y-m-d H:i:s'),

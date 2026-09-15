@@ -4,7 +4,7 @@ import CurrencyWidget from '../components/CurrencyWidget';
 
 const API = 'http://localhost:8080/api';
 
-export default function Dashboard({ user: initialUser, onLogout }) {
+export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting }) {
     const [user, setUser] = useState(initialUser);
     const [catalog, setCatalog] = useState([]);
     const [inventory, setInventory] = useState([]);
@@ -17,8 +17,26 @@ export default function Dashboard({ user: initialUser, onLogout }) {
     const role = user?.role || 'hero';
 
     useEffect(() => {
+        // Sync user credits from server on mount
+        syncUser();
         loadData();
     }, [tab]);
+
+    const syncUser = async () => {
+        try {
+            const token = localStorage.getItem('aegis_token');
+            const res = await fetch(`${API}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setUser(data.data.user);
+                localStorage.setItem('aegis_user', JSON.stringify(data.data.user));
+            }
+        } catch (err) {
+            console.error('Failed to sync user:', err);
+        }
+    };
 
     const loadData = async () => {
         if (role === 'admin') {
@@ -54,7 +72,9 @@ export default function Dashboard({ user: initialUser, onLogout }) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ combatantId: user.id, gearId })
+
         });
+
         const data = await res.json();
 
         if (data.success) {
@@ -118,14 +138,26 @@ export default function Dashboard({ user: initialUser, onLogout }) {
             {/* HEADER */}
             <div style={styles.header}>
                 <div>
-                    <h1 style={styles.logoTitle}>⚡ AEGIS & ANARCHY</h1>
+                    <h1 style={styles.logoTitle}>⚡ VANTABLACK</h1>
                     <p style={styles.logoSub}>TACTICAL COMMAND CENTER</p>
                 </div>
                 <div style={styles.userInfo}>
+
                     <span>{user.name}</span>
                     <span style={{ ...styles.roleBadge, background: getRoleColor(role), color: '#0a0a1a' }}>
                         {role.toUpperCase()}
                     </span>
+                    {/* COMBAT BUTTON */}
+                    {(role === 'hero' || role === 'villain') && (
+                        <button onClick={onShowCombat} style={styles.combatBtn} title="Enter Combat">
+                            ⚔️ Combat
+                        </button>
+                    )}
+                    {(role === 'hero' || role === 'villain') && (
+                        <button onClick={onShowCrafting} style={styles.craftBtn} title="Craft Gear">
+                            🔨 Craft
+                        </button>
+                    )}
                     <button
                         onClick={() => setShowWeather(!showWeather)}
                         style={styles.toggleBtn}
@@ -819,5 +851,30 @@ const styles = {
         fontWeight: 'bold',
         cursor: 'pointer',
         fontFamily: 'monospace'
-    }
+    },
+    combatBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #ff0044, #ff00ff)',
+        border: 'none',
+        color: 'white',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
+    },
+    craftBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #ffaa00, #ff6600)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
+    },
+
 };

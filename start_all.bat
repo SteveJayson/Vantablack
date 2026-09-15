@@ -1,6 +1,7 @@
 @echo off
 title Vantablack - Full System
 color 0E
+setlocal enabledelayedexpansion
 
 echo ========================================
 echo    VANTABLACK - FULL SYSTEM
@@ -14,46 +15,107 @@ set "BACKEND_PATH=%~dp0backend\CODE_PHP"
 set "FRONTEND_PATH=%~dp0FRONT_END"
 
 :: ============================================
-:: CHECK IF PATHS EXIST
+:: CHECK 1: MYSQL IS RUNNING
 :: ============================================
-echo [CHECK] Verifying directories...
+echo [1/4] Checking MySQL connection...
+where mysql >nul 2>nul
+if %errorlevel% neq 0 (
+    echo.
+    echo   [WARNING] MySQL client not found in PATH
+    echo   [INFO] Make sure MySQL is running in Laragon
+    echo.
+    goto :CHECK_PATHS
+)
+
+mysql -u root -e "SELECT 1" >nul 2>nul
+if %errorlevel% neq 0 (
+    echo.
+    echo   [ERROR] Cannot connect to MySQL!
+    echo   [INFO] Please start MySQL in Laragon first
+    echo.
+    set /p "continue=Continue anyway? (y/n): "
+    if /i "!continue!" neq "y" exit /b 1
+) else (
+    echo   [OK] MySQL is running
+)
+
+:: ============================================
+:: CHECK 2: DATABASE EXISTS
+:: ============================================
+echo.
+echo [2/4] Checking database 'aegis_db'...
+mysql -u root -e "USE aegis_db" >nul 2>nul
+if %errorlevel% neq 0 (
+    echo.
+    echo   [WARNING] Database 'aegis_db' not found!
+    echo   [INFO] Attempting to create and import schema...
+    echo.
+    
+    mysql -u root -e "CREATE DATABASE IF NOT EXISTS aegis_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    
+    if exist "%~dp0backend\QUERY\schema_and_seed.sql" (
+        echo   [INFO] Importing schema_and_seed.sql...
+        mysql -u root aegis_db < "%~dp0backend\QUERY\schema_and_seed.sql"
+        if !errorlevel! equ 0 (
+            echo   [OK] Database created and imported
+        ) else (
+            echo   [ERROR] Import failed. Please import manually.
+        )
+    ) else (
+        echo   [ERROR] schema_and_seed.sql not found!
+        echo   [INFO] Expected at: %~dp0backend\QUERY\schema_and_seed.sql
+    )
+) else (
+    echo   [OK] Database 'aegis_db' exists
+)
+
+:: ============================================
+:: CHECK 3: BACKEND AND FRONTEND PATHS
+:: ============================================
+:CHECK_PATHS
+echo.
+echo [3/4] Verifying directories...
 echo.
 
 if not exist "%BACKEND_PATH%" (
-    echo [ERROR] Backend not found at:
+    echo   [ERROR] Backend not found at:
     echo   %BACKEND_PATH%
-    echo.
-    echo Please check your BACKEND path.
     pause
     exit /b 1
 )
-echo [OK] Backend path found
-echo      %BACKEND_PATH%
+echo   [OK] Backend path found
 
 if not exist "%FRONTEND_PATH%" (
-    echo [ERROR] Frontend not found at:
+    echo   [ERROR] Frontend not found at:
     echo   %FRONTEND_PATH%
-    echo.
-    echo Please check your FRONT_END path.
     pause
     exit /b 1
 )
-echo [OK] Frontend path found
-echo      %FRONTEND_PATH%
-echo.
+echo   [OK] Frontend path found
+
+if not exist "%FRONTEND_PATH%\package.json" (
+    echo   [WARNING] package.json not found in FRONT_END
+    echo   [INFO] Run: npm install
+)
 
 :: ============================================
-:: CHECK PACKAGE.JSON
+:: CHECK 4: NODE_MODULES
 :: ============================================
-if not exist "%FRONTEND_PATH%\package.json" (
-    echo [WARNING] package.json not found in FRONT_END
-    echo [INFO] Frontend might need: npm install
+if not exist "%FRONTEND_PATH%\node_modules" (
     echo.
+    echo   [WARNING] node_modules not found
+    echo   [INFO] Running npm install...
+    cd /d "%FRONTEND_PATH%"
+    call npm install
+    cd /d "%~dp0"
 )
 
 :: ============================================
 :: START BACKEND
 :: ============================================
+echo.
+echo [4/4] Starting servers...
+echo.
 echo ========================================
 echo [STARTING] Backend Server
 echo ========================================
@@ -64,8 +126,7 @@ echo.
 
 start "Vantablack Backend" cmd /k "cd /d "%BACKEND_PATH%" && echo Starting Backend... && php -S localhost:8080 -t public"
 
-:: Wait for backend to start
-echo [WAIT] Starting backend...
+echo [WAIT] Backend starting...
 timeout /t 4 /nobreak >nul
 
 :: ============================================
@@ -81,13 +142,30 @@ echo.
 
 start "Vantablack Frontend" cmd /k "cd /d "%FRONTEND_PATH%" && echo Starting Vite... && npm run dev"
 
-:: Wait for frontend to start
-echo [WAIT] Starting frontend...
-timeout /t 4 /nobreak >nul
+echo [WAIT] Frontend starting...
+timeout /t 5 /nobreak >nul
 
 :: ============================================
-:: OPEN BROWSER
+:: VERIFY SERVERS
 :: ============================================
+echo.
+echo ========================================
+echo [VERIFY] Checking servers...
+echo ========================================
+echo.
+
+:: Test backend
+curl -s -o nul -w "%%{http_code}" http://localhost:8080/api/health > temp_status.txt 2>nul
+set /p backend_status=<temp_status.txt
+del temp_status.txt 2>nul
+
+if "!backend_status!"=="200" (
+    echo   [OK] Backend is running on port 8080
+) else (
+    echo   [WARNING] Backend may not be responding
+)
+
+:: Open browser
 echo.
 echo [INFO] Opening browser...
 start http://localhost:5173
@@ -97,13 +175,19 @@ start http://localhost:5173
 :: ============================================
 echo.
 echo ========================================
-echo    [SUCCESS] BOTH SERVERS RUNNING!
+echo    [SUCCESS] SYSTEM READY!
 echo ========================================
 echo.
 echo Backend:  http://localhost:8080
 echo Frontend: http://localhost:5173
 echo.
 echo API Test: http://localhost:8080/api/health
+echo.
+echo Demo Accounts:
+echo   juan       / password123   (Civilian)
+echo   vantablack / password123   (Hero)
+echo   shadow     / password123   (Villain)
+echo   admin      / admin123      (Admin)
 echo.
 echo ========================================
 echo To stop servers:
