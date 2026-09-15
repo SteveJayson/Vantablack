@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import Combat from './pages/Combat';
 import Crafting from './pages/Crafting';
+import Factions from './pages/Factions';
 
 export default function App() {
     const [user, setUser] = useState(() => {
@@ -33,8 +34,15 @@ export default function App() {
         }
     };
 
-    const handleCraftComplete = async () => {
-        // Refresh user credits
+    // ✅ UPDATED: Handles both direct credits OR fetch from backend
+    const refreshUser = async (newCredits = null) => {
+        if (newCredits !== null && newCredits !== undefined) {
+            const updatedUser = { ...user, credits: newCredits };
+            setUser(updatedUser);
+            localStorage.setItem('aegis_user', JSON.stringify(updatedUser));
+            return;
+        }
+
         try {
             const token = localStorage.getItem('aegis_token');
             const res = await fetch('http://localhost:8080/api/auth/me', {
@@ -45,15 +53,27 @@ export default function App() {
                 setUser(data.data.user);
                 localStorage.setItem('aegis_user', JSON.stringify(data.data.user));
             }
-        } catch (err) { }
+        } catch (err) {
+            console.error('Refresh user failed:', err);
+        }
     };
+
+    if (screen === 'factions' && user) {
+        return (
+            <Factions
+                user={user}
+                onBack={() => setScreen('dashboard')}
+                onAttackComplete={refreshUser}
+            />
+        );
+    }
 
     if (screen === 'crafting' && user) {
         return (
             <Crafting
                 user={user}
                 onBack={() => setScreen('dashboard')}
-                onCraftComplete={handleCraftComplete}
+                onCraftComplete={refreshUser}
             />
         );
     }
@@ -75,6 +95,7 @@ export default function App() {
                 onLogout={handleLogout}
                 onShowCombat={() => setScreen('combat')}
                 onShowCrafting={() => setScreen('crafting')}
+                onShowFactions={() => setScreen('factions')}
             />
         );
     }

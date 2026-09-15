@@ -111,6 +111,23 @@ $app->get('/api/crafting/history/{id}', \Aegis\Controllers\CraftingController::c
 $app->post('/api/crafting/disassemble', \Aegis\Controllers\CraftingController::class . ':disassemble');
 
 // ============================================
+// FACTION WARS ROUTES
+// ============================================
+$app->get('/api/factions/territories', \Aegis\Controllers\FactionController::class . ':getTerritories');
+$app->get('/api/factions/stats', \Aegis\Controllers\FactionController::class . ':getFactionStats');
+$app->post('/api/factions/attack', \Aegis\Controllers\FactionController::class . ':attack');
+$app->get('/api/factions/history', \Aegis\Controllers\FactionController::class . ':getAttackHistory');
+$app->get('/api/factions/bonuses/{id}', \Aegis\Controllers\FactionController::class . ':getActiveBonuses');
+
+// ============================================
+// DAILY REWARDS ROUTES
+// ============================================
+$app->get('/api/rewards/daily-status/{id}', \Aegis\Controllers\RewardsController::class . ':getDailyStatus');
+$app->post('/api/rewards/claim-daily', \Aegis\Controllers\RewardsController::class . ':claimDaily');
+$app->get('/api/rewards/leaderboard', \Aegis\Controllers\RewardsController::class . ':getStreakLeaderboard');
+$app->get('/api/rewards/history/{id}', \Aegis\Controllers\RewardsController::class . ':getClaimHistory');
+
+// ============================================
 // ADMIN
 // ============================================
 $app->get('/api/admin/dashboard', \Aegis\Controllers\AdminController::class . ':getDashboard');

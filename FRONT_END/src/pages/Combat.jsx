@@ -60,7 +60,11 @@ export default function Combat({ user, onBack, onBattleComplete }) {
             if (data.success) {
                 setBattleResult(data.data);
                 loadHistory();
-                if (onBattleComplete) onBattleComplete(data.data);
+
+                // ✅ Pass the updated credits
+                if (onBattleComplete) {
+                    onBattleComplete(data.data);
+                }
             } else {
                 setError(data.message || 'Battle failed');
             }

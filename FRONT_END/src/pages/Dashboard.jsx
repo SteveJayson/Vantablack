@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import WeatherWidget from '../components/WeatherWidget';
 import CurrencyWidget from '../components/CurrencyWidget';
+import DailyRewardModal from '../components/DailyRewardModal';
 
 const API = 'http://localhost:8080/api';
 
-export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting }) {
+export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting, onShowFactions }) {
     const [user, setUser] = useState(initialUser);
     const [catalog, setCatalog] = useState([]);
     const [inventory, setInventory] = useState([]);
@@ -13,13 +14,14 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
     const [alert, setAlert] = useState(null);
     const [showWeather, setShowWeather] = useState(true);
     const [showCurrency, setShowCurrency] = useState(true);
+    const [showDailyReward, setShowDailyReward] = useState(false);
 
     const role = user?.role || 'hero';
 
     useEffect(() => {
-        // Sync user credits from server on mount
         syncUser();
         loadData();
+        checkDailyReward();
     }, [tab]);
 
     const syncUser = async () => {
@@ -34,7 +36,19 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                 localStorage.setItem('aegis_user', JSON.stringify(data.data.user));
             }
         } catch (err) {
-            console.error('Failed to sync user:', err);
+            console.error('Sync failed:', err);
+        }
+    };
+
+    const checkDailyReward = async () => {
+        try {
+            const res = await fetch(`${API}/rewards/daily-status/${initialUser.id}`);
+            const data = await res.json();
+            if (data.success && data.data.canClaim) {
+                setTimeout(() => setShowDailyReward(true), 1000);
+            }
+        } catch (err) {
+            console.error('Daily check failed:', err);
         }
     };
 
@@ -72,13 +86,12 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ combatantId: user.id, gearId })
-
         });
-
         const data = await res.json();
 
         if (data.success) {
             setUser({ ...user, credits: data.data.newBalance });
+            localStorage.setItem('aegis_user', JSON.stringify({ ...user, credits: data.data.newBalance }));
             showAlert('success', `✅ Purchased! Balance: ₵${data.data.newBalance}`);
             loadData();
             if (role === 'admin') loadAdminDashboard();
@@ -97,6 +110,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
 
         if (data.success) {
             setUser({ ...user, credits: data.data.newBalance });
+            localStorage.setItem('aegis_user', JSON.stringify({ ...user, credits: data.data.newBalance }));
             showAlert('success', `✅ Sold for ₵${data.data.sellPrice}`);
             loadData();
             if (role === 'admin') loadAdminDashboard();
@@ -142,22 +156,37 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                     <p style={styles.logoSub}>TACTICAL COMMAND CENTER</p>
                 </div>
                 <div style={styles.userInfo}>
-
                     <span>{user.name}</span>
                     <span style={{ ...styles.roleBadge, background: getRoleColor(role), color: '#0a0a1a' }}>
                         {role.toUpperCase()}
                     </span>
-                    {/* COMBAT BUTTON */}
+
                     {(role === 'hero' || role === 'villain') && (
                         <button onClick={onShowCombat} style={styles.combatBtn} title="Enter Combat">
                             ⚔️ Combat
                         </button>
                     )}
+
                     {(role === 'hero' || role === 'villain') && (
                         <button onClick={onShowCrafting} style={styles.craftBtn} title="Craft Gear">
                             🔨 Craft
                         </button>
                     )}
+
+                    {(role === 'hero' || role === 'villain') && (
+                        <button onClick={onShowFactions} style={styles.factionBtn} title="Faction Wars">
+                            🏴 Factions
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => setShowDailyReward(true)}
+                        style={styles.rewardBtn}
+                        title="Daily Rewards"
+                    >
+                        🎁 Rewards
+                    </button>
+
                     <button
                         onClick={() => setShowWeather(!showWeather)}
                         style={styles.toggleBtn}
@@ -546,6 +575,19 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                     )}
                 </div>
             </div>
+
+            {/* DAILY REWARD MODAL */}
+            {showDailyReward && (
+                <DailyRewardModal
+                    user={user}
+                    onClose={() => setShowDailyReward(false)}
+                    onClaimed={async (newBalance) => {
+                        const updatedUser = { ...user, credits: newBalance };
+                        setUser(updatedUser);
+                        localStorage.setItem('aegis_user', JSON.stringify(updatedUser));
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -651,6 +693,54 @@ const styles = {
         fontFamily: 'monospace',
         fontSize: '0.9rem',
         fontWeight: 'bold'
+    },
+    combatBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #ff0044, #ff00ff)',
+        border: 'none',
+        color: 'white',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
+    },
+    craftBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #ffaa00, #ff6600)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
+    },
+    factionBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #00f0ff, #00ff88)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
+    },
+    rewardBtn: {
+        padding: '8px 16px',
+        background: 'linear-gradient(90deg, #00ff88, #00f0ff)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.75rem',
+        letterSpacing: '1px'
     },
     logoutBtn: {
         padding: '8px 16px',
@@ -851,30 +941,5 @@ const styles = {
         fontWeight: 'bold',
         cursor: 'pointer',
         fontFamily: 'monospace'
-    },
-    combatBtn: {
-        padding: '8px 16px',
-        background: 'linear-gradient(90deg, #ff0044, #ff00ff)',
-        border: 'none',
-        color: 'white',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontFamily: 'monospace',
-        fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
-    },
-    craftBtn: {
-        padding: '8px 16px',
-        background: 'linear-gradient(90deg, #ffaa00, #ff6600)',
-        border: 'none',
-        color: '#0a0a1a',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontFamily: 'monospace',
-        fontWeight: 'bold',
-        fontSize: '0.75rem',
-        letterSpacing: '1px'
-    },
-
+    }
 };
