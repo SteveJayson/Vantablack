@@ -84,7 +84,7 @@ class CombatController
     
     /**
      * POST /api/combat/simulate
-     * Simulate a battle between two combatants
+     * Simulate a battle between two combatants AND auto-save a replay
      */
     public function simulate($request, $response, $args)
     {
@@ -201,11 +201,11 @@ class CombatController
                 ");
                 $stmt->execute([$defenderId]);
                 
-                // Award credits
+                // Award credits to attacker
                 $stmt = $this->db->prepare("UPDATE combatants SET credits = credits + ? WHERE id = ?");
                 $stmt->execute([$creditsEarned, $attackerId]);
                 
-                // Deduct penalty
+                // Deduct from defender (10% of reward)
                 $deduct = (int)($creditsEarned * 0.1);
                 $stmt = $this->db->prepare("UPDATE combatants SET credits = GREATEST(0, credits - ?) WHERE id = ?");
                 $stmt->execute([$deduct, $defenderId]);
@@ -283,28 +283,131 @@ class CombatController
                 // Activity log optional
             }
             
+            // ============================================
+            // AUTO-SAVE REPLAY
+            // ============================================
+            try {
+                $replaySteps = [
+                    [
+                        'step' => 1,
+                        'type' => 'start',
+                        'message' => "⚔️ {$attacker['name']} challenges {$defender['name']}!",
+                        'attackerHP' => 100,
+                        'defenderHP' => 100,
+                        'timestamp' => 0
+                    ],
+                    [
+                        'step' => 2,
+                        'type' => 'reveal',
+                        'message' => "📊 Power: {$attacker['name']} ({$this->formatNumber($attackerPower)}) vs {$defender['name']} ({$this->formatNumber($defenderPower)})",
+                        'attackerHP' => 100,
+                        'defenderHP' => 100,
+                        'timestamp' => 1500
+                    ],
+                    [
+                        'step' => 3,
+                        'type' => 'attack',
+                        'message' => "💥 {$attacker['name']} strikes for {$damageDealt} damage!",
+                        'attackerHP' => 100,
+                        'defenderHP' => max(0, 100 - round($damageDealt / 10)),
+                        'damage' => $damageDealt,
+                        'timestamp' => 3000
+                    ],
+                    [
+                        'step' => 4,
+                        'type' => 'counter',
+                        'message' => "🛡️ {$defender['name']} counters for {$damageTaken} damage!",
+                        'attackerHP' => max(0, 100 - round($damageTaken / 10)),
+                        'defenderHP' => max(0, 100 - round($damageDealt / 10)),
+                        'damage' => $damageTaken,
+                        'timestamp' => 4500
+                    ],
+                    [
+                        'step' => 5,
+                        'type' => 'critical',
+                        'message' => "🎯 {$winner['name']} lands a critical blow!",
+                        'attackerHP' => max(0, 100 - round($damageTaken / 10)),
+                        'defenderHP' => $winner['id'] == $attackerId ? 10 : 20,
+                        'timestamp' => 6000
+                    ],
+                    [
+                        'step' => 6,
+                        'type' => 'victory',
+                        'message' => "🏆 {$winner['name']} WINS THE BATTLE!",
+                        'attackerHP' => $winner['id'] == $attackerId ? 30 : 0,
+                        'defenderHP' => $winner['id'] == $attackerId ? 0 : 30,
+                        'timestamp' => 7500
+                    ],
+                    [
+                        'step' => 7,
+                        'type' => 'reward',
+                        'message' => "💰 " . ($actualCreditsEarned >= 0 ? "+" : "") . "₵{$actualCreditsEarned} credits!",
+                        'attackerHP' => $winner['id'] == $attackerId ? 30 : 0,
+                        'defenderHP' => $winner['id'] == $attackerId ? 0 : 30,
+                        'timestamp' => 9000
+                    ]
+                ];
+                
+                $replayData = [
+                    'attackerName' => $attacker['name'],
+                    'defenderName' => $defender['name'],
+                    'attackerPower' => round($attackerPower),
+                    'defenderPower' => round($defenderPower),
+                    'winnerId' => (int)$winner['id'],
+                    'winnerName' => $winner['name'],
+                    'result' => $result,
+                    'creditsEarned' => $actualCreditsEarned,
+                    'damageDealt' => $damageDealt,
+                    'damageTaken' => $damageTaken,
+                    'steps' => $replaySteps
+                ];
+                
+                $stmt = $this->db->prepare("
+                    INSERT INTO battle_replays 
+                    (combatant_id, opponent_id, opponent_name, replay_data, winner_id, result, 
+                     total_damage_dealt, total_damage_taken, replay_duration, is_public, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
+                ");
+                $stmt->execute([
+                    $attackerId,
+                    $defenderId,
+                    $defender['name'],
+                    json_encode($replayData),
+                    (int)$winner['id'],
+                    $result,
+                    $damageDealt,
+                    $damageTaken,
+                    9000
+                ]);
+            } catch (\Exception $e) {
+                // Replay save failed — don't break combat
+                // Log for debugging
+                error_log("Replay save failed: " . $e->getMessage());
+            }
+            
             // Fetch updated attacker credits
-$stmt = $this->db->prepare("SELECT credits FROM combatants WHERE id = ?");
-$stmt->execute([$attackerId]);
-$updatedCredits = (int)$stmt->fetch()['credits'];
-
-$this->db->commit();
-
-return $this->jsonResponse($response, 200, true, 'Battle complete', [
-    'winner' => (int)$winner['id'],
-    'winnerName' => $winner['name'],
-    'loser' => (int)$loser['id'],
-    'loserName' => $loser['name'],
-    'result' => $result,
-    'log' => $log,
-    'creditsEarned' => $actualCreditsEarned,
-    'damageDealt' => $damageDealt,
-    'damageTaken' => $damageTaken,
-    'attackerPower' => round($attackerPower),
-    'defenderPower' => round($defenderPower),
-    'attackerNewCredits' => $updatedCredits,  // ← NEW
-    'foughtAt' => date('Y-m-d H:i:s')
-]);
+            $stmt = $this->db->prepare("SELECT credits FROM combatants WHERE id = ?");
+            $stmt->execute([$attackerId]);
+            $updatedCredits = (int)$stmt->fetch()['credits'];
+            
+            $this->db->commit();
+            
+            return $this->jsonResponse($response, 200, true, 'Battle complete', [
+                'winner' => (int)$winner['id'],
+                'winnerName' => $winner['name'],
+                'loser' => (int)$loser['id'],
+                'loserName' => $loser['name'],
+                'result' => $result,
+                'log' => $log,
+                'creditsEarned' => $actualCreditsEarned,
+                'damageDealt' => $damageDealt,
+                'damageTaken' => $damageTaken,
+                'attackerPower' => round($attackerPower),
+                'defenderPower' => round($defenderPower),
+                'attackerNewCredits' => $updatedCredits,
+                'foughtAt' => date('Y-m-d H:i:s')
+            ]);
+            
         } catch (\Exception $e) {
             $this->db->rollBack();
             return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
@@ -313,7 +416,6 @@ return $this->jsonResponse($response, 200, true, 'Battle complete', [
     
     /**
      * GET /api/combat/history/{id}?limit=10
-     * Get battle history for a combatant
      */
     public function getHistory($request, $response, $args)
     {
@@ -382,7 +484,6 @@ return $this->jsonResponse($response, 200, true, 'Battle complete', [
     
     /**
      * GET /api/combat/leaderboard
-     * Get top fighters by wins
      */
     public function getLeaderboard($request, $response, $args)
     {
@@ -428,6 +529,14 @@ return $this->jsonResponse($response, 200, true, 'Battle complete', [
         } catch (\Exception $e) {
             return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Helper: Format large numbers (add commas)
+     */
+    private function formatNumber($num): string
+    {
+        return number_format(round($num));
     }
     
     /**

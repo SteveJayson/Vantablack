@@ -7,6 +7,8 @@ import Combat from './pages/Combat';
 import Crafting from './pages/Crafting';
 import Factions from './pages/Factions';
 import Events from './pages/Events';
+import Leaderboards from './pages/Leaderboards';
+import Replays from './pages/Replays';
 
 export default function App() {
     const [user, setUser] = useState(() => {
@@ -58,44 +60,28 @@ export default function App() {
         }
     };
 
+    if (screen === 'replays' && user) {
+        return <Replays user={user} onBack={() => setScreen('dashboard')} />;
+    }
+
+    if (screen === 'leaderboards' && user) {
+        return <Leaderboards user={user} onBack={() => setScreen('dashboard')} />;
+    }
+
     if (screen === 'events' && user) {
-        return (
-            <Events
-                user={user}
-                onBack={() => setScreen('dashboard')}
-                onEventAction={refreshUser}
-            />
-        );
+        return <Events user={user} onBack={() => setScreen('dashboard')} onEventAction={refreshUser} />;
     }
 
     if (screen === 'factions' && user) {
-        return (
-            <Factions
-                user={user}
-                onBack={() => setScreen('dashboard')}
-                onAttackComplete={refreshUser}
-            />
-        );
+        return <Factions user={user} onBack={() => setScreen('dashboard')} onAttackComplete={refreshUser} />;
     }
 
     if (screen === 'crafting' && user) {
-        return (
-            <Crafting
-                user={user}
-                onBack={() => setScreen('dashboard')}
-                onCraftComplete={refreshUser}
-            />
-        );
+        return <Crafting user={user} onBack={() => setScreen('dashboard')} onCraftComplete={refreshUser} />;
     }
 
     if (screen === 'combat' && user) {
-        return (
-            <Combat
-                user={user}
-                onBack={() => setScreen('dashboard')}
-                onBattleComplete={handleBattleComplete}
-            />
-        );
+        return <Combat user={user} onBack={() => setScreen('dashboard')} onBattleComplete={handleBattleComplete} />;
     }
 
     if (screen === 'dashboard' && user) {
@@ -107,23 +93,18 @@ export default function App() {
                 onShowCrafting={() => setScreen('crafting')}
                 onShowFactions={() => setScreen('factions')}
                 onShowEvents={() => setScreen('events')}
+                onShowLeaderboards={() => setScreen('leaderboards')}
+                onShowReplays={() => setScreen('replays')}
             />
         );
     }
 
     if (screen === 'register') {
-        return (
-            <Register
-                onRegister={handleLogin}
-                onShowLogin={() => setScreen('login')}
-            />
-        );
+        return <Register onRegister={handleLogin} onShowLogin={() => setScreen('login')} />;
     }
 
     if (screen === 'forgot') {
-        return (
-            <ForgotPassword onShowLogin={() => setScreen('login')} />
-        );
+        return <ForgotPassword onShowLogin={() => setScreen('login')} />;
     }
 
     return (

@@ -156,6 +156,27 @@ $app->post('/api/notifications/read-all', \Aegis\Controllers\NotificationControl
 $app->delete('/api/notifications/{id}', \Aegis\Controllers\NotificationController::class . ':deleteNotification');
 $app->post('/api/notifications/broadcast', \Aegis\Controllers\NotificationController::class . ':broadcast');
 
+// ============================================
+// LEADERBOARD ROUTES
+// ============================================
+$app->get('/api/leaderboards/fighters', \Aegis\Controllers\LeaderboardController::class . ':getTopFighters');
+$app->get('/api/leaderboards/earners', \Aegis\Controllers\LeaderboardController::class . ':getTopEarners');
+$app->get('/api/leaderboards/collectors', \Aegis\Controllers\LeaderboardController::class . ':getTopCollectors');
+$app->get('/api/leaderboards/achievements', \Aegis\Controllers\LeaderboardController::class . ':getAchievementLeaders');
+$app->get('/api/leaderboards/factions', \Aegis\Controllers\LeaderboardController::class . ':getFactionRankings');
+$app->get('/api/leaderboards/global', \Aegis\Controllers\LeaderboardController::class . ':getGlobalRankings');
+$app->get('/api/leaderboards/my-rank/{id}', \Aegis\Controllers\LeaderboardController::class . ':getMyRank');
+
+// ============================================
+// REPLAY ROUTES
+// ============================================
+$app->post('/api/replays/save', \Aegis\Controllers\ReplayController::class . ':saveReplay');
+$app->get('/api/replays/shared', \Aegis\Controllers\ReplayController::class . ':getSharedReplays');
+$app->get('/api/replays/detail/{id}', \Aegis\Controllers\ReplayController::class . ':getReplayDetail');
+$app->get('/api/replays/{id}', \Aegis\Controllers\ReplayController::class . ':getReplays');
+$app->delete('/api/replays/{id}', \Aegis\Controllers\ReplayController::class . ':deleteReplay');
+$app->post('/api/replays/toggle-visibility/{id}', \Aegis\Controllers\ReplayController::class . ':toggleVisibility');
+
 
 // ============================================
 // ADMIN

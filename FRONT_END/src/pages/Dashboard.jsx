@@ -8,7 +8,7 @@ import AdminCharts from '../components/AdminCharts';
 
 const API = 'http://localhost:8080/api';
 
-export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting, onShowFactions, onShowEvents }) {
+export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting, onShowFactions, onShowEvents, onShowLeaderboards, onShowReplays }) {
     const [user, setUser] = useState(initialUser);
     const [catalog, setCatalog] = useState([]);
     const [inventory, setInventory] = useState([]);
@@ -202,6 +202,12 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                         )}
                         <button onClick={onShowEvents} style={styles.eventBtn}>
                             🎪 Events
+                        </button>
+                        <button onClick={onShowLeaderboards} style={styles.leaderboardBtn}>
+                            🎖️ Ranks
+                        </button>
+                        <button onClick={onShowReplays} style={styles.replayBtn}>
+                            🎬 Replays
                         </button>
                         <button onClick={() => setShowDailyReward(true)} style={styles.rewardBtn}>
                             🎁 Rewards
@@ -1099,5 +1105,31 @@ const styles = {
         background: 'rgba(255,0,68,0.1)',
         borderColor: '#ff0044',
         color: '#ff0044'
-    }
+    },
+    leaderboardBtn: {
+        padding: '8px 14px',
+        background: 'linear-gradient(90deg, #ffd700, #ffaa00)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
+    },
+    replayBtn: {
+        padding: '8px 14px',
+        background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
+        border: 'none',
+        color: '#0a0a1a',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
+    },
 };
