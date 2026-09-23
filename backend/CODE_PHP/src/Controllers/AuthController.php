@@ -452,37 +452,17 @@ class AuthController
     /**
      * Helper: Get role starting config
      */
-    private function getRoleConfig(string $role): array
-    {
-        $configs = [
-            'civilian' => [
-                'credits' => 500,
-                'bio_capacity' => 100,
-                'recovery' => 1,
-                'risk' => 5,
-                'faction' => 'hero',
-                'clearance' => 1
-            ],
-            'hero' => [
-                'credits' => 5000,
-                'bio_capacity' => 1200,
-                'recovery' => 3,
-                'risk' => 10,
-                'faction' => 'hero',
-                'clearance' => 2
-            ],
-            'villain' => [
-                'credits' => 5000,
-                'bio_capacity' => 1100,
-                'recovery' => 4,
-                'risk' => 15,
-                'faction' => 'villain',
-                'clearance' => 2
-            ]
-        ];
-        
-        return $configs[$role] ?? $configs['civilian'];
-    }
+   private function getRoleConfig(string $role): array
+{
+    $configs = [
+        'civilian' => ['credits' => 500, 'bio_capacity' => 100, 'recovery' => 1, 'risk' => 5, 'faction' => 'hero', 'clearance' => 1],
+        'hero' => ['credits' => 5000, 'bio_capacity' => 1200, 'recovery' => 3, 'risk' => 10, 'faction' => 'hero', 'clearance' => 2],
+        'villain' => ['credits' => 5000, 'bio_capacity' => 1100, 'recovery' => 4, 'risk' => 15, 'faction' => 'villain', 'clearance' => 3],
+        'admin' => ['credits' => 999999, 'bio_capacity' => 0, 'recovery' => 0, 'risk' => 0, 'faction' => 'hero', 'clearance' => 4]
+    ];
+    
+    return $configs[$role] ?? $configs['civilian'];
+}
     
     /**
      * Helper: Get token from Authorization header
