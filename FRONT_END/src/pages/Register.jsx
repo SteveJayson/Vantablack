@@ -119,7 +119,7 @@ export default function Register({ onRegister, onShowLogin }) {
                                 key={r.id}
                                 style={{
                                     ...styles.roleCard,
-                                    borderColor: role === r.id ? r.color : 'rgba(0, 240, 255, 0.2)',
+                                    borderColor: role === r.id ? r.color : '#4b5563',
                                     background: role === r.id ? `${r.color}15` : 'rgba(0,0,0,0.4)',
                                     boxShadow: role === r.id ? `0 0 20px ${r.color}40` : 'none'
                                 }}
@@ -169,14 +169,14 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0a0a1a',
-        color: '#e0e0ff',
+        background: '#20242a',
+        color: '#f1f3f5',
         fontFamily: 'monospace',
         padding: '20px'
     },
     card: {
-        background: 'rgba(10, 10, 30, 0.85)',
-        border: '1px solid rgba(0, 240, 255, 0.2)',
+        background: '#252a31',
+        border: '1px solid #3a424c',
         borderRadius: '12px',
         padding: '30px',
         maxWidth: '700px',
@@ -184,14 +184,14 @@ const styles = {
     },
     title: {
         textAlign: 'center',
-        color: '#00f0ff',
+        color: '#f1f3f5',
         fontSize: '1.5rem',
         marginBottom: '5px',
         marginTop: 0
     },
     subtitle: {
         textAlign: 'center',
-        color: '#00f0ff',
+        color: '#b8c1cc',
         fontSize: '1rem',
         marginBottom: '25px',
         marginTop: 0
@@ -200,17 +200,17 @@ const styles = {
     label: {
         display: 'block',
         fontSize: '0.7rem',
-        color: '#8888cc',
+        color: '#b8c1cc',
         marginBottom: '8px',
         letterSpacing: '2px'
     },
     input: {
         width: '100%',
         padding: '12px 15px',
-        background: 'rgba(0,0,0,0.4)',
-        border: '1px solid rgba(0, 240, 255, 0.2)',
+        background: '#eef1f4',
+        border: '1px solid #7c8794',
         borderRadius: '8px',
-        color: '#e0e0ff',
+        color: '#1f2933',
         fontSize: '0.9rem',
         fontFamily: 'monospace',
         boxSizing: 'border-box'
@@ -218,8 +218,8 @@ const styles = {
     button: {
         width: '100%',
         padding: '14px',
-        background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
-        color: '#0a0a1a',
+        background: '#526b80',
+        color: '#f8fafc',
         border: 'none',
         borderRadius: '8px',
         fontSize: '0.85rem',
@@ -232,15 +232,15 @@ const styles = {
     },
     error: {
         padding: '12px',
-        background: 'rgba(255, 0, 68, 0.1)',
-        border: '1px solid #ff0044',
-        color: '#ff0044',
+        background: '#343b44',
+        border: '1px solid #7c8794',
+        color: '#f1f3f5',
         borderRadius: '8px',
         marginBottom: '20px',
         fontSize: '0.8rem'
     },
     roleTitle: {
-        color: '#00f0ff',
+        color: '#b8c1cc',
         fontSize: '0.85rem',
         textAlign: 'center',
         margin: '20px 0 15px',
@@ -261,12 +261,12 @@ const styles = {
     },
     roleDesc: {
         fontSize: '0.65rem',
-        color: '#8888cc',
+        color: '#b8c1cc',
         marginBottom: '10px'
     },
     roleBenefits: {
         fontSize: '0.6rem',
-        color: '#8888cc',
+        color: '#b8c1cc',
         textAlign: 'left',
         paddingTop: '10px',
         borderTop: '1px solid rgba(255, 255, 255, 0.1)'
@@ -276,10 +276,10 @@ const styles = {
         textAlign: 'center',
         marginTop: '20px',
         fontSize: '0.8rem',
-        color: '#8888cc'
+        color: '#b8c1cc'
     },
     loginLinkBtn: {
-        color: '#00f0ff',
+        color: '#dbe2e8',
         fontWeight: 'bold',
         cursor: 'pointer',
         textDecoration: 'underline'
