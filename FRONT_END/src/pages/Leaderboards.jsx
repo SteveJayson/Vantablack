@@ -71,9 +71,9 @@ export default function Leaderboards({ user, onBack }) {
     };
 
     const getRankIcon = (rank) => {
-        if (rank === 1) return '🥇';
-        if (rank === 2) return '🥈';
-        if (rank === 3) return '🥉';
+        if (rank === 1) return '1';
+        if (rank === 2) return '2';
+        if (rank === 3) return '3';
         return `#${rank}`;
     };
 
@@ -85,8 +85,8 @@ export default function Leaderboards({ user, onBack }) {
     };
 
     const getRoleIcon = (role) => {
-        const icons = { civilian: '👤', hero: '🦸', villain: '🦹', admin: '👑' };
-        return icons[role] || '💬';
+        const icons = { civilian: 'C', hero: 'H', villain: 'V', admin: 'A' };
+        return icons[role] || 'N';
     };
 
     const getRoleColor = (role) => {
@@ -95,11 +95,11 @@ export default function Leaderboards({ user, onBack }) {
     };
 
     const tabs = [
-        { id: 'global', label: '🌍 Global', icon: '🌍' },
-        { id: 'fighters', label: '⚔️ Fighters', icon: '⚔️' },
-        { id: 'earners', label: '💰 Earners', icon: '💰' },
-        { id: 'collectors', label: '🎒 Collectors', icon: '🎒' },
-        { id: 'achievements', label: '🏆 Achievements', icon: '🏆' }
+        { id: 'global', label: 'Global', icon: 'G' },
+        { id: 'fighters', label: 'Fighters', icon: 'F' },
+        { id: 'earners', label: 'Earners', icon: 'E' },
+        { id: 'collectors', label: 'Collectors', icon: 'C' },
+        { id: 'achievements', label: 'Achievements', icon: 'A' }
     ];
 
     const renderRow = (entry, index, category) => {
@@ -157,7 +157,7 @@ export default function Leaderboards({ user, onBack }) {
                             <div style={styles.statLabel}>WIN RATE</div>
                         </div>
                         <div style={styles.statCell}>
-                            <div style={{ ...styles.statValue, color: '#ffaa00' }}>🔥 {entry.currentStreak}</div>
+                            <div style={{ ...styles.statValue, color: '#d1d5db' }}>{entry.currentStreak}</div>
                             <div style={styles.statLabel}>STREAK</div>
                         </div>
                     </>
@@ -187,7 +187,7 @@ export default function Leaderboards({ user, onBack }) {
                             <div style={styles.statLabel}>ITEMS</div>
                         </div>
                         <div style={styles.statCell}>
-                            <div style={{ ...styles.statValue, color: '#ff00ff' }}>⭐ {entry.legendaryCount}</div>
+                            <div style={{ ...styles.statValue, color: '#ff00ff' }}>{entry.legendaryCount}</div>
                             <div style={styles.statLabel}>LEGENDARY</div>
                         </div>
                         <div style={styles.statCell}>
@@ -204,7 +204,7 @@ export default function Leaderboards({ user, onBack }) {
                             <div style={styles.statLabel}>UNLOCKED</div>
                         </div>
                         <div style={styles.statCell}>
-                            <div style={{ ...styles.statValue, color: '#ffaa00' }}>⭐ {entry.totalPoints}</div>
+                            <div style={{ ...styles.statValue, color: '#ffaa00' }}>{entry.totalPoints}</div>
                             <div style={styles.statLabel}>POINTS</div>
                         </div>
                     </>
@@ -217,8 +217,8 @@ export default function Leaderboards({ user, onBack }) {
         <div style={styles.container}>
             {/* HEADER */}
             <div style={styles.header}>
-                <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                <h1 style={styles.title}>🎖️ LEADERBOARDS</h1>
+                <button onClick={onBack} style={styles.backBtn}>Back</button>
+                <h1 style={styles.title}>LEADERBOARDS</h1>
                 <div style={styles.userBadge}>
                     <span>{user.name}</span>
                 </div>
@@ -227,26 +227,26 @@ export default function Leaderboards({ user, onBack }) {
             {/* MY RANK SUMMARY */}
             {myRank && (
                 <div style={styles.myRankCard}>
-                    <h3 style={styles.myRankTitle}>⭐ YOUR RANKINGS</h3>
+                    <h3 style={styles.myRankTitle}>YOUR RANKINGS</h3>
                     <div style={styles.myRankGrid}>
                         <div style={styles.myRankItem}>
-                            <div style={styles.myRankLabel}>🌍 Global</div>
+                            <div style={styles.myRankLabel}>Global</div>
                             <div style={styles.myRankValue}>#{myRank.globalRank}</div>
                         </div>
                         <div style={styles.myRankItem}>
-                            <div style={styles.myRankLabel}>⚔️ Fighter</div>
+                            <div style={styles.myRankLabel}>Fighter</div>
                             <div style={styles.myRankValue}>#{myRank.fighterRank}</div>
                         </div>
                         <div style={styles.myRankItem}>
-                            <div style={styles.myRankLabel}>💰 Earner</div>
+                            <div style={styles.myRankLabel}>Earner</div>
                             <div style={styles.myRankValue}>#{myRank.earnerRank}</div>
                         </div>
                         <div style={styles.myRankItem}>
-                            <div style={styles.myRankLabel}>🎒 Collector</div>
+                            <div style={styles.myRankLabel}>Collector</div>
                             <div style={styles.myRankValue}>#{myRank.collectorRank}</div>
                         </div>
                         <div style={styles.myRankItem}>
-                            <div style={styles.myRankLabel}>🏆 Achiever</div>
+                            <div style={styles.myRankLabel}>Achiever</div>
                             <div style={styles.myRankValue}>#{myRank.achievementRank}</div>
                         </div>
                     </div>
@@ -256,7 +256,7 @@ export default function Leaderboards({ user, onBack }) {
             {/* FACTION RANKINGS */}
             {factionData && (
                 <div style={styles.factionCard}>
-                    <h3 style={styles.factionTitle}>🏴 FACTION RANKINGS</h3>
+                    <h3 style={styles.factionTitle}>FACTION RANKINGS</h3>
                     <div style={styles.factionGrid}>
                         <div style={{
                             ...styles.factionItem,
@@ -264,9 +264,9 @@ export default function Leaderboards({ user, onBack }) {
                             background: factionData.leader === 'hero' ? 'rgba(0,240,255,0.1)' : 'rgba(0,0,0,0.3)'
                         }}>
                             <div style={styles.factionHeader}>
-                                <span style={styles.factionIcon}>🦸</span>
+                                <span style={styles.factionIcon}>H</span>
                                 <span style={styles.factionName}>HEROES</span>
-                                {factionData.leader === 'hero' && <span style={styles.leaderBadge}>👑 LEADING</span>}
+                                {factionData.leader === 'hero' && <span style={styles.leaderBadge}>LEADING</span>}
                             </div>
                             <div style={styles.factionStats}>
                                 <div style={styles.factionStat}>
@@ -296,9 +296,9 @@ export default function Leaderboards({ user, onBack }) {
                             background: factionData.leader === 'villain' ? 'rgba(255,0,68,0.1)' : 'rgba(0,0,0,0.3)'
                         }}>
                             <div style={styles.factionHeader}>
-                                <span style={styles.factionIcon}>🦹</span>
+                                <span style={styles.factionIcon}>V</span>
                                 <span style={{ ...styles.factionName, color: '#ff0044' }}>VILLAINS</span>
-                                {factionData.leader === 'villain' && <span style={styles.leaderBadge}>👑 LEADING</span>}
+                                {factionData.leader === 'villain' && <span style={styles.leaderBadge}>LEADING</span>}
                             </div>
                             <div style={styles.factionStats}>
                                 <div style={styles.factionStat}>
@@ -324,7 +324,7 @@ export default function Leaderboards({ user, onBack }) {
                     </div>
 
                     <div style={styles.factionSummary}>
-                        🏆 <strong>{factionData.leader.toUpperCase()}S</strong> are leading by <strong>{factionData.difference}</strong> power points
+                        <strong>{factionData.leader.toUpperCase()}S</strong> are leading by <strong>{factionData.difference}</strong> power points
                     </div>
                 </div>
             )}
@@ -345,7 +345,7 @@ export default function Leaderboards({ user, onBack }) {
                 ))}
             </div>
 
-            {error && <div style={styles.errorBox}>❌ {error}</div>}
+            {error && <div style={styles.errorBox}>{error}</div>}
 
             {/* LEADERBOARD LIST */}
             <div style={styles.panel}>

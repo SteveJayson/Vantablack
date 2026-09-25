@@ -77,17 +77,16 @@ export default function DailyRewardModal({ user, onClose, onClaimed }) {
             <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
                 {/* HEADER */}
                 <div style={styles.header}>
-                    <h2 style={styles.title}>🎁 DAILY REWARDS</h2>
-                    <button onClick={onClose} style={styles.closeBtn}>✕</button>
+                    <h2 style={styles.title}>DAILY REWARDS</h2>
+                    <button onClick={onClose} style={styles.closeBtn}>Close</button>
                 </div>
 
-                {error && <div style={styles.errorBox}>❌ {error}</div>}
+                {error && <div style={styles.errorBox}>{error}</div>}
 
                 {/* SUCCESS STATE */}
                 {claimResult ? (
                     <div style={styles.successPanel}>
-                        <div style={styles.successIcon}>🎉</div>
-                        <h3 style={styles.successTitle}>REWARD CLAIMED!</h3>
+                        <h3 style={styles.successTitle}>REWARD CLAIMED</h3>
                         <div style={styles.successDay}>Day {claimResult.day}</div>
                         <div style={styles.successCredits}>
                             +₵{claimResult.creditsEarned.toLocaleString()}
@@ -97,14 +96,14 @@ export default function DailyRewardModal({ user, onClose, onClaimed }) {
                         )}
                         {claimResult.streakBroken && (
                             <div style={styles.streakBrokenMsg}>
-                                ⚠️ Your streak was broken. Starting over at Day {claimResult.newStreak}.
+                                Your streak was broken. Starting over at Day {claimResult.newStreak}.
                             </div>
                         )}
                         <div style={styles.newBalance}>
                             New Balance: ₵{claimResult.newBalance.toLocaleString()}
                         </div>
                         <button onClick={onClose} style={styles.claimBtn}>
-                            ✅ CLOSE
+                            CLOSE
                         </button>
                     </div>
                 ) : (
@@ -113,7 +112,7 @@ export default function DailyRewardModal({ user, onClose, onClaimed }) {
                         <div style={styles.streakHeader}>
                             <div style={styles.streakInfo}>
                                 <div style={styles.streakValue}>
-                                    🔥 {status.currentStreak} Day Streak
+                                    {status.currentStreak} Day Streak
                                 </div>
                                 <div style={styles.streakBest}>
                                     Best: {status.longestStreak} days
@@ -121,11 +120,11 @@ export default function DailyRewardModal({ user, onClose, onClaimed }) {
                             </div>
                             {status.canClaim ? (
                                 <div style={styles.statusBadge}>
-                                    ✅ Ready to claim!
+                                    Ready to claim
                                 </div>
                             ) : (
-                                <div style={{ ...styles.statusBadge, background: 'rgba(255,170,0,0.2)', color: '#ffaa00' }}>
-                                    ⏰ Next claim in {status.hoursUntilNext}h
+                                <div style={{ ...styles.statusBadge, background: '#3a2c00', color: '#ffaa00' }}>
+                                    Next claim in {status.hoursUntilNext}h
                                 </div>
                             )}
                         </div>
@@ -137,6 +136,7 @@ export default function DailyRewardModal({ user, onClose, onClaimed }) {
                                 const color = getDayColor(day, status.currentStreak, status.nextStreak);
                                 const isClaimed = day <= status.currentStreak;
                                 const isNext = day === status.nextStreak;
+                                const stateLabel = isClaimed ? 'CLAIMED' : isNext ? 'NEXT' : 'LOCKED';
 
                                 return (
                                     <div
@@ -145,22 +145,20 @@ export default function DailyRewardModal({ user, onClose, onClaimed }) {
                                             ...styles.dayCard,
                                             borderColor: color,
                                             background: isClaimed
-                                                ? 'rgba(0,255,136,0.1)'
+                                                ? '#062b1d'
                                                 : isNext
-                                                    ? 'rgba(255,170,0,0.15)'
-                                                    : 'rgba(0,0,0,0.3)'
+                                                    ? '#3a2c00'
+                                                    : '#12121f'
                                         }}
                                     >
                                         <div style={styles.dayLabel}>DAY {day}</div>
-                                        <div style={styles.dayIcon}>
-                                            {isClaimed ? '✅' : isNext ? '🎁' : '🔒'}
-                                        </div>
+                                        <div style={{ ...styles.dayState, color }}>{stateLabel}</div>
                                         <div style={{ ...styles.dayCredits, color }}>
                                             ₵{reward.credits.toLocaleString()}
                                         </div>
                                         {reward.bonus_type && (
                                             <div style={styles.dayBonus}>
-                                                +🎁 GEAR
+                                                BONUS
                                             </div>
                                         )}
                                     </div>
@@ -179,17 +177,17 @@ export default function DailyRewardModal({ user, onClose, onClaimed }) {
                             }}
                         >
                             {claiming
-                                ? '⏳ CLAIMING...'
+                                ? 'CLAIMING...'
                                 : status.canClaim
-                                    ? `🎁 CLAIM DAY ${status.nextStreak} REWARD`
-                                    : `⏰ COME BACK IN ${status.hoursUntilNext}H`
+                                    ? `CLAIM DAY ${status.nextStreak} REWARD`
+                                    : `COME BACK IN ${status.hoursUntilNext}H`
                             }
                         </button>
 
                         {/* RECENT CLAIMS */}
                         {status.history && status.history.length > 0 && (
                             <div style={styles.historySection}>
-                                <h4 style={styles.historyTitle}>📜 RECENT CLAIMS</h4>
+                                <h4 style={styles.historyTitle}>RECENT CLAIMS</h4>
                                 <div style={styles.historyList}>
                                     {status.history.slice(0, 5).map((h, i) => (
                                         <div key={i} style={styles.historyItem}>
@@ -217,7 +215,7 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0,0,0,0.85)',
+        background: '#000000d9',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -226,7 +224,7 @@ const styles = {
     },
     modal: {
         background: '#0a0a1a',
-        border: '2px solid #00f0ff',
+        border: '1px solid #00f0ff',
         borderRadius: '16px',
         padding: '25px',
         maxWidth: '700px',
@@ -234,8 +232,7 @@ const styles = {
         maxHeight: '90vh',
         overflowY: 'auto',
         fontFamily: 'monospace',
-        color: '#e0e0ff',
-        boxShadow: '0 0 60px rgba(0, 240, 255, 0.4)'
+        color: '#e0e0ff'
     },
     header: {
         display: 'flex',
@@ -243,7 +240,7 @@ const styles = {
         alignItems: 'center',
         marginBottom: '20px',
         paddingBottom: '15px',
-        borderBottom: '1px solid rgba(0, 240, 255, 0.2)'
+        borderBottom: '1px solid #1a1a2e'
     },
     title: {
         color: '#00f0ff',
@@ -252,16 +249,15 @@ const styles = {
         letterSpacing: '3px'
     },
     closeBtn: {
-        background: 'rgba(255,0,68,0.2)',
-        border: '1px solid #ff0044',
-        color: '#ff0044',
-        width: '32px',
-        height: '32px',
-        borderRadius: '50%',
+        background: 'rgba(122, 162, 255, 0.08)',
+        border: '1px solid #7aa2ff',
+        color: '#dfe6f3',
+        padding: '6px 12px',
+        borderRadius: '8px',
         cursor: 'pointer',
         fontFamily: 'monospace',
         fontWeight: 'bold',
-        fontSize: '1rem'
+        fontSize: '0.72rem'
     },
     loading: {
         textAlign: 'center',
@@ -271,7 +267,7 @@ const styles = {
     },
     errorBox: {
         padding: '12px',
-        background: 'rgba(255,0,68,0.1)',
+        background: '#2a0010',
         border: '1px solid #ff0044',
         color: '#ff0044',
         borderRadius: '8px',
@@ -282,10 +278,6 @@ const styles = {
     successPanel: {
         textAlign: 'center',
         padding: '20px 0'
-    },
-    successIcon: {
-        fontSize: '4rem',
-        marginBottom: '10px'
     },
     successTitle: {
         color: '#00ff88',
@@ -307,7 +299,7 @@ const styles = {
     },
     bonusMessage: {
         padding: '12px',
-        background: 'rgba(255,170,0,0.15)',
+        background: '#3a2c00',
         border: '1px solid #ffaa00',
         borderRadius: '8px',
         color: '#ffaa00',
@@ -316,7 +308,7 @@ const styles = {
     },
     streakBrokenMsg: {
         padding: '10px',
-        background: 'rgba(255,0,68,0.1)',
+        background: '#2a0010',
         border: '1px solid #ff0044',
         borderRadius: '8px',
         color: '#ff0044',
@@ -325,7 +317,7 @@ const styles = {
     },
     newBalance: {
         padding: '10px',
-        background: 'rgba(0,240,255,0.1)',
+        background: '#062733',
         borderRadius: '8px',
         color: '#00f0ff',
         fontSize: '0.85rem',
@@ -337,8 +329,8 @@ const styles = {
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '15px',
-        background: 'rgba(255,170,0,0.1)',
-        border: '1px solid rgba(255,170,0,0.3)',
+        background: '#1a1400',
+        border: '1px solid #4a3900',
         borderRadius: '10px',
         marginBottom: '20px',
         flexWrap: 'wrap',
@@ -360,8 +352,8 @@ const styles = {
     },
     statusBadge: {
         padding: '8px 16px',
-        background: 'rgba(0,255,136,0.15)',
-        color: '#00ff88',
+        background: 'rgba(122, 162, 255, 0.1)',
+        color: '#dfe6f3',
         borderRadius: '20px',
         fontSize: '0.75rem',
         fontWeight: 'bold'
@@ -376,8 +368,7 @@ const styles = {
         padding: '10px 5px',
         border: '2px solid',
         borderRadius: '10px',
-        textAlign: 'center',
-        transition: 'all 0.3s'
+        textAlign: 'center'
     },
     dayLabel: {
         fontSize: '0.55rem',
@@ -385,8 +376,10 @@ const styles = {
         letterSpacing: '1px',
         marginBottom: '6px'
     },
-    dayIcon: {
-        fontSize: '1.3rem',
+    dayState: {
+        fontSize: '0.55rem',
+        fontWeight: 'bold',
+        letterSpacing: '0.5px',
         marginBottom: '6px'
     },
     dayCredits: {
@@ -401,8 +394,8 @@ const styles = {
     claimBtn: {
         width: '100%',
         padding: '16px',
-        background: 'linear-gradient(90deg, #00ff88, #00f0ff)',
-        color: '#0a0a1a',
+        background: '#7aa2ff',
+        color: '#0e172a',
         border: 'none',
         borderRadius: '10px',
         fontSize: '0.9rem',
@@ -415,7 +408,7 @@ const styles = {
     historySection: {
         marginTop: '20px',
         paddingTop: '20px',
-        borderTop: '1px solid rgba(0, 240, 255, 0.1)'
+        borderTop: '1px solid #1a1a2e'
     },
     historyTitle: {
         color: '#00f0ff',
@@ -432,7 +425,7 @@ const styles = {
         display: 'flex',
         justifyContent: 'space-between',
         padding: '8px 12px',
-        background: 'rgba(0,0,0,0.3)',
+        background: '#12121f',
         borderRadius: '6px',
         fontSize: '0.75rem'
     }

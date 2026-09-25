@@ -114,19 +114,19 @@ export default function ChatWidget({ user }) {
 
     const getRoleIcon = (role) => {
         const icons = {
-            civilian: '👤',
-            hero: '🦸',
-            villain: '🦹',
-            admin: '👑'
+            civilian: '',
+            hero: '',
+            villain: '',
+            admin: ''
         };
-        return icons[role] || '💬';
+        return icons[role] || '';
     };
 
     const getChannelInfo = () => {
         const info = {
-            global: { icon: '🌐', name: 'Global', color: '#00f0ff' },
-            faction: { icon: '🏴', name: user.faction === 'hero' ? 'Heroes' : 'Villains', color: user.faction === 'hero' ? '#00f0ff' : '#ff0044' },
-            trade: { icon: '💰', name: 'Trade', color: '#ffaa00' }
+            global: { icon: '', name: 'Global', color: '#7aa2ff' },
+            faction: { icon: '', name: user.faction === 'hero' ? 'Heroes' : 'Villains', color: user.faction === 'hero' ? '#7aa2ff' : '#b0b4c6' },
+            trade: { icon: '', name: 'Trade', color: '#a6afc4' }
         };
         return info[channel];
     };
@@ -149,7 +149,7 @@ export default function ChatWidget({ user }) {
         <div style={styles.widget}>
             {/* HEADER */}
             <div style={styles.header}>
-                <h3 style={styles.title}>💬 CHAT</h3>
+                <h3 style={styles.title}>CHAT</h3>
                 <div style={styles.onlineIndicator}>
                     <span style={styles.onlineDot}>●</span>
                     <span style={styles.onlineText}>LIVE</span>
@@ -162,31 +162,31 @@ export default function ChatWidget({ user }) {
                     onClick={() => setChannel('global')}
                     style={{ ...styles.channelTab, ...(channel === 'global' ? styles.channelTabActive : {}) }}
                 >
-                    🌐 GLOBAL
+                     GLOBAL
                 </button>
                 <button
                     onClick={() => setChannel('faction')}
                     style={{ ...styles.channelTab, ...(channel === 'faction' ? styles.channelTabActive : {}) }}
                 >
-                    🏴 FACTION
+                     FACTION
                 </button>
                 <button
                     onClick={() => setChannel('trade')}
                     style={{ ...styles.channelTab, ...(channel === 'trade' ? styles.channelTabActive : {}) }}
                 >
-                    💰 TRADE
+                     TRADE
                 </button>
             </div>
 
             {/* CHANNEL INFO */}
             <div style={{ ...styles.channelInfo, borderColor: channelInfo.color }}>
                 <span style={{ color: channelInfo.color }}>
-                    {channelInfo.icon} #{channelInfo.name}
+                    #{channelInfo.name}
                 </span>
             </div>
 
             {/* ERROR */}
-            {error && <div style={styles.errorBox}>❌ {error}</div>}
+            {error && <div style={styles.errorBox}>{error}</div>}
 
             {/* MESSAGES */}
             <div style={styles.messagesContainer}>
@@ -251,7 +251,7 @@ export default function ChatWidget({ user }) {
                         cursor: (!input.trim() || sending) ? 'not-allowed' : 'pointer'
                     }}
                 >
-                    {sending ? '⏳' : '📤'}
+                    {sending ? 'Sending...' : 'Send'}
                 </button>
             </form>
 
@@ -278,7 +278,7 @@ const styles = {
         marginBottom: '12px'
     },
     title: {
-        color: '#00f0ff',
+        color: '#dfe6f3',
         fontSize: '0.9rem',
         margin: 0,
         letterSpacing: '2px'
@@ -290,11 +290,11 @@ const styles = {
         fontSize: '0.65rem'
     },
     onlineDot: {
-        color: '#00ff88',
+        color: '#7aa2ff',
         fontSize: '0.8rem'
     },
     onlineText: {
-        color: '#00ff88',
+        color: '#a3b3d9',
         letterSpacing: '1px',
         fontWeight: 'bold'
     },
@@ -307,8 +307,8 @@ const styles = {
         flex: 1,
         padding: '8px 4px',
         background: 'rgba(0,0,0,0.3)',
-        border: '1px solid rgba(0,240,255,0.2)',
-        color: '#8888cc',
+        border: '1px solid rgba(164, 174, 201, 0.2)',
+        color: '#a4acc8',
         cursor: 'pointer',
         borderRadius: '6px',
         fontFamily: 'monospace',
@@ -317,9 +317,9 @@ const styles = {
         letterSpacing: '1px'
     },
     channelTabActive: {
-        background: 'rgba(0,240,255,0.15)',
-        borderColor: '#00f0ff',
-        color: '#00f0ff'
+        background: 'rgba(122, 162, 255, 0.12)',
+        borderColor: '#7aa2ff',
+        color: '#dfe6f3'
     },
     channelInfo: {
         padding: '6px 10px',
@@ -332,9 +332,9 @@ const styles = {
     },
     errorBox: {
         padding: '8px',
-        background: 'rgba(255,0,68,0.1)',
-        border: '1px solid #ff0044',
-        color: '#ff0044',
+        background: 'rgba(180, 190, 210, 0.08)',
+        border: '1px solid #9aa4bd',
+        color: '#dfe6f3',
         borderRadius: '6px',
         fontSize: '0.7rem',
         marginBottom: '8px',
@@ -364,8 +364,8 @@ const styles = {
         borderLeft: '2px solid rgba(0,240,255,0.3)'
     },
     ownMessage: {
-        background: 'rgba(0,240,255,0.08)',
-        borderLeft: '2px solid #00f0ff'
+        background: 'rgba(122,162,255,0.08)',
+        borderLeft: '2px solid #7aa2ff'
     },
     messageHeader: {
         display: 'flex',
@@ -413,12 +413,14 @@ const styles = {
     },
     sendBtn: {
         padding: '10px 16px',
-        background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
+        background: '#7aa2ff',
         border: 'none',
         borderRadius: '6px',
         cursor: 'pointer',
-        fontSize: '1rem',
-        color: '#0a0a1a'
+        fontSize: '0.75rem',
+        fontWeight: 'bold',
+        letterSpacing: '1px',
+        color: '#0e172a'
     },
     charCount: {
         textAlign: 'right',

@@ -135,8 +135,8 @@ export default function Replays({ user, onBack }) {
         <div style={styles.container}>
             {/* HEADER */}
             <div style={styles.header}>
-                <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                <h1 style={styles.title}>🎬 COMBAT REPLAYS</h1>
+                <button onClick={onBack} style={styles.backBtn}>Back</button>
+                <h1 style={styles.title}>COMBAT REPLAYS</h1>
                 <div style={styles.userBadge}>
                     <span>{user.name}</span>
                 </div>
@@ -147,19 +147,19 @@ export default function Replays({ user, onBack }) {
                 <div style={styles.statsGrid}>
                     <div style={styles.statCard}>
                         <div style={styles.statValue}>{stats.totalReplays}</div>
-                        <div style={styles.statLabel}>📼 TOTAL REPLAYS</div>
+                        <div style={styles.statLabel}>TOTAL REPLAYS</div>
                     </div>
                     <div style={styles.statCard}>
                         <div style={{ ...styles.statValue, color: '#00ff88' }}>{stats.wins}</div>
-                        <div style={styles.statLabel}>🏆 WINS</div>
+                        <div style={styles.statLabel}>WINS</div>
                     </div>
                     <div style={styles.statCard}>
                         <div style={{ ...styles.statValue, color: '#ff0044' }}>{stats.losses}</div>
-                        <div style={styles.statLabel}>💀 LOSSES</div>
+                        <div style={styles.statLabel}>LOSSES</div>
                     </div>
                     <div style={styles.statCard}>
                         <div style={{ ...styles.statValue, color: '#ffaa00' }}>{stats.totalViews}</div>
-                        <div style={styles.statLabel}>👁️ TOTAL VIEWS</div>
+                        <div style={styles.statLabel}>TOTAL VIEWS</div>
                     </div>
                 </div>
             )}
@@ -170,30 +170,30 @@ export default function Replays({ user, onBack }) {
                     onClick={() => setActiveTab('mine')}
                     style={{ ...styles.tab, ...(activeTab === 'mine' ? styles.tabActive : {}) }}
                 >
-                    📼 MY REPLAYS
+                    MY REPLAYS
                 </button>
                 <button
                     onClick={() => setActiveTab('shared')}
                     style={{ ...styles.tab, ...(activeTab === 'shared' ? styles.tabActive : {}) }}
                 >
-                    🌍 SHARED REPLAYS
+                    SHARED REPLAYS
                 </button>
             </div>
 
-            {error && <div style={styles.errorBox}>❌ {error}</div>}
+            {error && <div style={styles.errorBox}>{error}</div>}
 
             <div style={styles.grid}>
                 {/* LIST */}
                 <div style={styles.panel}>
                     <h2 style={styles.panelTitle}>
-                        {activeTab === 'mine' ? '📼 YOUR BATTLES' : '🌍 POPULAR REPLAYS'}
+                        {activeTab === 'mine' ? 'YOUR BATTLES' : 'POPULAR REPLAYS'}
                     </h2>
 
                     {loading ? (
                         <div style={styles.loading}>Loading...</div>
                     ) : (activeTab === 'mine' ? replays : sharedReplays).length === 0 ? (
                         <div style={styles.empty}>
-                            <div style={styles.emptyIcon}>🎬</div>
+                            <div style={styles.emptyIcon}> </div>
                             <div style={styles.emptyText}>
                                 {activeTab === 'mine'
                                     ? 'No battle replays yet. Fight some battles to record them!'
@@ -216,7 +216,7 @@ export default function Replays({ user, onBack }) {
                                 >
                                     <div style={styles.replayHeader}>
                                         <span style={styles.resultIcon}>
-                                            {replay.result === 'win' ? '🏆' : '💀'}
+                                            {replay.result === 'win' ? 'W' : 'L'}
                                         </span>
                                         <div style={styles.replayInfo}>
                                             <div style={styles.replayVs}>
@@ -234,8 +234,8 @@ export default function Replays({ user, onBack }) {
                                         </div>
                                     </div>
                                     <div style={styles.replayMeta}>
-                                        <span>⚔️ {replay.damageDealt} dmg</span>
-                                        <span>👁️ {replay.views} views</span>
+                                        <span>{replay.damageDealt} dmg</span>
+                                        <span>{replay.views} views</span>
                                         <span style={styles.replayTime}>{formatTime(replay.createdAt)}</span>
                                     </div>
                                     {activeTab === 'mine' && (
@@ -243,7 +243,7 @@ export default function Replays({ user, onBack }) {
                                             onClick={(e) => deleteReplay(replay.id, e)}
                                             style={styles.deleteBtn}
                                         >
-                                            ✕
+                                            X
                                         </button>
                                     )}
                                 </div>
@@ -254,11 +254,11 @@ export default function Replays({ user, onBack }) {
 
                 {/* PLAYBACK */}
                 <div style={styles.panel}>
-                    <h2 style={styles.panelTitle}>🎬 REPLAY PLAYER</h2>
+                    <h2 style={styles.panelTitle}>REPLAY PLAYER</h2>
 
                     {!selectedReplay ? (
                         <div style={styles.empty}>
-                            <div style={styles.emptyIcon}>📺</div>
+                            <div style={styles.emptyIcon}></div>
                             <div style={styles.emptyText}>Select a replay to view</div>
                         </div>
                     ) : !replayDetail ? (
@@ -278,7 +278,7 @@ export default function Replays({ user, onBack }) {
                                         {replayDetail.replay_data.attackerName}
                                     </div>
                                     <div style={styles.fighterPower}>
-                                        ⚔️ {replayDetail.replay_data.attackerPower}
+                                        {replayDetail.replay_data.attackerPower}
                                     </div>
                                 </div>
                                 <div style={styles.vs}>VS</div>
@@ -293,7 +293,7 @@ export default function Replays({ user, onBack }) {
                                         {replayDetail.replay_data.defenderName}
                                     </div>
                                     <div style={styles.fighterPower}>
-                                        ⚔️ {replayDetail.replay_data.defenderPower}
+                                        {replayDetail.replay_data.defenderPower}
                                     </div>
                                 </div>
                             </div>
@@ -336,11 +336,11 @@ export default function Replays({ user, onBack }) {
                             <div style={styles.controls}>
                                 {!playing ? (
                                     <button onClick={playReplay} style={styles.playBtn}>
-                                        ▶️ PLAY REPLAY
+                                        PLAY REPLAY
                                     </button>
                                 ) : (
                                     <button onClick={stopReplay} style={styles.stopBtn}>
-                                        ⏹️ STOP
+                                        STOP
                                     </button>
                                 )}
                             </div>
@@ -367,24 +367,24 @@ export default function Replays({ user, onBack }) {
                             {/* BATTLE STATS */}
                             <div style={styles.battleStats}>
                                 <div style={styles.battleStat}>
-                                    <div style={styles.battleStatLabel}>💰 Credits</div>
+                                    <div style={styles.battleStatLabel}>Credits</div>
                                     <div style={{
                                         ...styles.battleStatValue,
-                                        color: replayDetail.replay_data.creditsEarned >= 0 ? '#00ff88' : '#ff0044'
+                                        color: replayDetail.replay_data.creditsEarned >= 0 ? '#d1d5db' : '#b8beca'
                                     }}>
                                         {replayDetail.replay_data.creditsEarned >= 0 ? '+' : ''}₵{replayDetail.replay_data.creditsEarned}
                                     </div>
                                 </div>
                                 <div style={styles.battleStat}>
-                                    <div style={styles.battleStatLabel}>⚔️ Damage Dealt</div>
+                                    <div style={styles.battleStatLabel}>Damage Dealt</div>
                                     <div style={styles.battleStatValue}>{replayDetail.replay_data.damageDealt}</div>
                                 </div>
                                 <div style={styles.battleStat}>
-                                    <div style={styles.battleStatLabel}>🛡️ Damage Taken</div>
+                                    <div style={styles.battleStatLabel}>Damage Taken</div>
                                     <div style={styles.battleStatValue}>{replayDetail.replay_data.damageTaken}</div>
                                 </div>
                                 <div style={styles.battleStat}>
-                                    <div style={styles.battleStatLabel}>🏆 Winner</div>
+                                    <div style={styles.battleStatLabel}>Winner</div>
                                     <div style={styles.battleStatValue}>{replayDetail.replay_data.winnerName}</div>
                                 </div>
                             </div>

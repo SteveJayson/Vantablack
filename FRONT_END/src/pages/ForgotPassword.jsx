@@ -31,7 +31,7 @@ export default function ForgotPassword({ onShowLogin }) {
             if (data.success) {
                 if (data.data.reset_token) {
                     setResetToken(data.data.reset_token);
-                    setSuccess(`✅ Reset token generated! Valid for ${data.data.expires_in}.`);
+                    setSuccess(`Reset token generated! Valid for ${data.data.expires_in}.`);
                     setTimeout(() => setStep(2), 1500);
                 } else {
                     setError(data.message || 'User not found');
@@ -78,7 +78,7 @@ export default function ForgotPassword({ onShowLogin }) {
             const data = await res.json();
 
             if (data.success) {
-                setSuccess('✅ Password reset successful! Redirecting to login...');
+                setSuccess('Password reset successful! Redirecting to login...');
                 setTimeout(() => onShowLogin(), 2000);
             } else {
                 setError(data.message || 'Reset failed');
@@ -93,8 +93,8 @@ export default function ForgotPassword({ onShowLogin }) {
     return (
         <div style={styles.container}>
             <div style={styles.card}>
-                <h1 style={styles.title}>⚡ VANTABLACK</h1>
-                <h2 style={styles.subtitle}>🔑 RESET PASSWORD</h2>
+                <h1 style={styles.title}>VANTABLACK</h1>
+                <h2 style={styles.subtitle}>RESET PASSWORD</h2>
 
                 {/* Progress Indicator */}
                 <div style={styles.progress}>
@@ -136,7 +136,7 @@ export default function ForgotPassword({ onShowLogin }) {
                         </div>
 
                         <button type="submit" disabled={loading} style={styles.button}>
-                            {loading ? '⏳ GENERATING...' : '🔑 GET RESET TOKEN'}
+                            {loading ? 'GENERATING...' : 'GET RESET TOKEN'}
                         </button>
                     </form>
                 )}
@@ -180,7 +180,7 @@ export default function ForgotPassword({ onShowLogin }) {
                         </div>
 
                         <button type="submit" disabled={loading} style={styles.button}>
-                            {loading ? '⏳ RESETTING...' : '🔐 RESET PASSWORD'}
+                            {loading ? 'RESETTING...' : 'RESET PASSWORD'}
                         </button>
                     </form>
                 )}
@@ -190,7 +190,7 @@ export default function ForgotPassword({ onShowLogin }) {
                         onClick={onShowLogin}
                         style={styles.link}
                     >
-                        ← Back to Login
+                        Back to Login
                     </span>
                 </div>
             </div>

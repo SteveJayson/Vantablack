@@ -19,6 +19,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
     const [showCurrency, setShowCurrency] = useState(true);
     const [showChat, setShowChat] = useState(false);
     const [showDailyReward, setShowDailyReward] = useState(false);
+    const [showUtilities, setShowUtilities] = useState(false);
 
     const role = user?.role || 'hero';
     const canAct = role === 'hero' || role === 'villain';
@@ -98,10 +99,10 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
             const updatedUser = { ...user, credits: data.data.newBalance };
             setUser(updatedUser);
             localStorage.setItem('aegis_user', JSON.stringify(updatedUser));
-            showAlert('success', `✅ Purchased! Balance: ₵${data.data.newBalance.toLocaleString()}`);
+            showAlert('success', `Purchased! Balance: ₵${data.data.newBalance.toLocaleString()}`);
             loadData();
         } else {
-            showAlert('error', `❌ ${data.message}`);
+            showAlert('error', `${data.message}`);
         }
     };
 
@@ -117,10 +118,10 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
             const updatedUser = { ...user, credits: data.data.newBalance };
             setUser(updatedUser);
             localStorage.setItem('aegis_user', JSON.stringify(updatedUser));
-            showAlert('success', `✅ Sold for ₵${data.data.sellPrice.toLocaleString()}`);
+            showAlert('success', `Sold for ₵${data.data.sellPrice.toLocaleString()}`);
             loadData();
         } else {
-            showAlert('error', `❌ ${data.message}`);
+            showAlert('error', `${data.message}`);
         }
     };
 
@@ -134,13 +135,13 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
             const data = await res.json();
 
             if (data.success) {
-                showAlert('success', `✅ Generated ${data.data.count} ${roleType}s!`);
+                showAlert('success', `Generated ${data.data.count} ${roleType}s!`);
                 loadAdminDashboard();
             } else {
-                showAlert('error', `❌ ${data.message}`);
+                showAlert('error', `${data.message}`);
             }
         } catch (error) {
-            showAlert('error', `❌ Error: ${error.message}`);
+            showAlert('error', `Error: ${error.message}`);
         }
     };
 
@@ -160,8 +161,8 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
             <div style={styles.header}>
                 {/* LEFT: Logo */}
                 <div style={styles.logoSection}>
-                    <h1 style={styles.logoTitle}>⚡ VANTABLACK</h1>
-                    <p style={styles.logoSub}>TACTICAL COMMAND CENTER</p>
+                    <h1 style={styles.logoTitle}>⚡VANTABLACK</h1>
+                    <p style={styles.logoSub}>DASHBOARD</p>
                 </div>
 
                 {/* RIGHT: User + Actions */}
@@ -182,66 +183,56 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                         <NotificationBell user={user} />
 
                         {/* Logout */}
-                        <button onClick={onLogout} style={styles.logoutBtn}>🚪</button>
+                        <button onClick={onLogout} style={styles.logoutBtn}>LOGOUT</button>
                     </div>
 
                     {/* Action Buttons Row */}
                     <div style={styles.actionRow}>
-                        {canAct && (
-                            <>
-                                <button onClick={onShowCombat} style={styles.combatBtn}>
-                                    ⚔️ Combat
-                                </button>
-                                <button onClick={onShowCrafting} style={styles.craftBtn}>
-                                    🔨 Craft
-                                </button>
-                                <button onClick={onShowFactions} style={styles.factionBtn}>
-                                    🏴 Factions
-                                </button>
-                            </>
-                        )}
-                        <button onClick={onShowEvents} style={styles.eventBtn}>
-                            🎪 Events
-                        </button>
-                        <button onClick={onShowLeaderboards} style={styles.leaderboardBtn}>
-                            🎖️ Ranks
-                        </button>
-                        <button onClick={onShowReplays} style={styles.replayBtn}>
-                            🎬 Replays
-                        </button>
-                        <button onClick={() => setShowDailyReward(true)} style={styles.rewardBtn}>
-                            🎁 Rewards
-                        </button>
+                        <div style={styles.primaryNav}>
+                            {canAct && (
+                                <>
+                                    <button onClick={onShowCombat} style={styles.combatBtn}>Combat</button>
+                                    <button onClick={onShowCrafting} style={styles.craftBtn}>Craft</button>
+                                    <button onClick={onShowFactions} style={styles.factionBtn}>Factions</button>
+                                </>
+                            )}
+                            <button onClick={onShowEvents} style={styles.eventBtn}>Events</button>
+                            <button onClick={onShowLeaderboards} style={styles.leaderboardBtn}>Ranks</button>
+                            <button onClick={onShowReplays} style={styles.replayBtn}>Replays</button>
+                            <button onClick={() => setShowDailyReward(true)} style={styles.rewardBtn}>Rewards</button>
+                        </div>
                         <button
-                            onClick={() => setShowChat(!showChat)}
-                            style={{
-                                ...styles.chatBtn,
-                                ...(showChat ? styles.chatBtnActive : {})
-                            }}
+                            onClick={() => setShowUtilities(!showUtilities)}
+                            style={{ ...styles.moreBtn, ...(showUtilities ? styles.moreBtnActive : {}) }}
+                            aria-expanded={showUtilities}
                         >
-                            💬 Chat
-                        </button>
-                        <button
-                            onClick={() => setShowWeather(!showWeather)}
-                            style={{
-                                ...styles.toggleBtn,
-                                ...(showWeather ? styles.toggleBtnActive : {})
-                            }}
-                            title="Toggle Weather"
-                        >
-                            🌍
-                        </button>
-                        <button
-                            onClick={() => setShowCurrency(!showCurrency)}
-                            style={{
-                                ...styles.toggleBtn,
-                                ...(showCurrency ? styles.toggleBtnActive : {})
-                            }}
-                            title="Toggle Currency"
-                        >
-                            💱
+                            {showUtilities ? 'Less' : 'More'}
                         </button>
                     </div>
+                    {showUtilities && (
+                        <div style={styles.utilityNav}>
+                            <button
+                                onClick={() => setShowChat(!showChat)}
+                                style={{ ...styles.chatBtn, ...(showChat ? styles.chatBtnActive : {}) }}
+                            >
+                                Chat
+                            </button>
+                            <button
+                                onClick={() => setShowWeather(!showWeather)}
+                                style={{ ...styles.toggleBtn, ...(showWeather ? styles.toggleBtnActive : {}) }}
+                                title="Toggle Weather"
+                            >
+                                WEATHER
+                            </button>
+                            <button
+                                onClick={() => setShowCurrency(!showCurrency)}
+                                style={{ ...styles.toggleBtn, ...(showCurrency ? styles.toggleBtnActive : {}) }}
+                                title="Toggle Currency"
+                            >
+                                CURRENCY
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -259,7 +250,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                 <div style={styles.leftColumn}>
                     {/* Profile Card */}
                     <div style={styles.panel}>
-                        <h2 style={styles.panelTitle}>🎭 ACTIVE USER</h2>
+                        <h2 style={styles.panelTitle}>ACTIVE USER</h2>
                         <div style={styles.profileCard}>
                             <h3 style={styles.profileName}>{user.name}</h3>
                             <div style={{
@@ -309,12 +300,12 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                 <div style={styles.panel}>
                     {role === 'admin' ? (
                         <div>
-                            <h2 style={styles.panelTitle}>👑 ADMIN DASHBOARD</h2>
+                            <h2 style={styles.panelTitle}>ADMIN DASHBOARD</h2>
 
                             {adminData && (
                                 <>
                                     {/* REGISTERED */}
-                                    <h3 style={styles.sectionTitle}>📋 REGISTERED USERS</h3>
+                                    <h3 style={styles.sectionTitle}>REGISTERED USERS</h3>
                                     <div style={styles.adminStats}>
                                         <AdminStat value={adminData.registered.civilians} label="CIVILIANS" color="#ffaa00" />
                                         <AdminStat value={adminData.registered.heroes} label="HEROES" color="#00f0ff" />
@@ -323,7 +314,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     </div>
 
                                     {/* LOGGED IN */}
-                                    <h3 style={styles.sectionTitle}>✅ LOGGED IN</h3>
+                                    <h3 style={styles.sectionTitle}>LOGGED IN</h3>
                                     <div style={styles.adminStats}>
                                         <AdminStat value={adminData.logged_in.civilians} label="CIVILIANS" color="#ffaa00" />
                                         <AdminStat value={adminData.logged_in.heroes} label="HEROES" color="#00f0ff" />
@@ -332,7 +323,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     </div>
 
                                     {/* ONLINE */}
-                                    <h3 style={styles.sectionTitle}>🟢 ONLINE NOW</h3>
+                                    <h3 style={styles.sectionTitle}>ONLINE NOW</h3>
                                     <div style={styles.adminStats}>
                                         <AdminStat value={adminData.online.civilians} label="CIVILIANS" color="#ffaa00" />
                                         <AdminStat value={adminData.online.heroes} label="HEROES" color="#00f0ff" />
@@ -341,13 +332,13 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     </div>
 
                                     {/* SPENDING */}
-                                    <h3 style={styles.sectionTitle}>🛒 TOTAL PURCHASES BY ROLE</h3>
+                                    <h3 style={styles.sectionTitle}>TOTAL PURCHASES BY ROLE</h3>
                                     <div style={styles.adminStats}>
                                         <div style={styles.adminStat}>
                                             <div style={{ ...styles.adminStatValue, color: '#ffaa00' }}>
                                                 ₵{(adminData.spending_by_role?.civilians?.total_spent || 0).toLocaleString()}
                                             </div>
-                                            <div style={styles.adminStatLabel}>👤 CIVILIANS</div>
+                                            <div style={styles.adminStatLabel}>CIVILIANS</div>
                                             <div style={{ ...styles.adminStatLabel, color: '#00ff88', marginTop: '4px' }}>
                                                 {adminData.spending_by_role?.civilians?.purchase_count || 0} purchases
                                             </div>
@@ -356,7 +347,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                             <div style={{ ...styles.adminStatValue, color: '#00f0ff' }}>
                                                 ₵{(adminData.spending_by_role?.heroes?.total_spent || 0).toLocaleString()}
                                             </div>
-                                            <div style={styles.adminStatLabel}>🦸 HEROES</div>
+                                            <div style={styles.adminStatLabel}>HEROES</div>
                                             <div style={{ ...styles.adminStatLabel, color: '#00ff88', marginTop: '4px' }}>
                                                 {adminData.spending_by_role?.heroes?.purchase_count || 0} purchases
                                             </div>
@@ -365,7 +356,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                             <div style={{ ...styles.adminStatValue, color: '#ff0044' }}>
                                                 ₵{(adminData.spending_by_role?.villains?.total_spent || 0).toLocaleString()}
                                             </div>
-                                            <div style={styles.adminStatLabel}>🦹 VILLAINS</div>
+                                            <div style={styles.adminStatLabel}>VILLAINS</div>
                                             <div style={{ ...styles.adminStatLabel, color: '#00ff88', marginTop: '4px' }}>
                                                 {adminData.spending_by_role?.villains?.purchase_count || 0} purchases
                                             </div>
@@ -374,12 +365,12 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                             <div style={{ ...styles.adminStatValue, color: '#00ff88' }}>
                                                 ₵{(adminData.transactions?.total_revenue || 0).toLocaleString()}
                                             </div>
-                                            <div style={styles.adminStatLabel}>💰 TOTAL REVENUE</div>
+                                            <div style={styles.adminStatLabel}>TOTAL REVENUE</div>
                                         </div>
                                     </div>
 
                                     {/* SPENDING TABLE */}
-                                    <h3 style={styles.sectionTitle}>💰 DETAILED SPENDING BREAKDOWN</h3>
+                                    <h3 style={styles.sectionTitle}>DETAILED SPENDING BREAKDOWN</h3>
                                     <table style={styles.dataTable}>
                                         <thead>
                                             <tr>
@@ -436,7 +427,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     {/* TOP SPENDERS */}
                                     {adminData.top_spenders && adminData.top_spenders.length > 0 && (
                                         <>
-                                            <h3 style={styles.sectionTitle}>🏆 TOP SPENDERS</h3>
+                                            <h3 style={styles.sectionTitle}>TOP SPENDERS</h3>
                                             <table style={styles.dataTable}>
                                                 <thead>
                                                     <tr>
@@ -481,7 +472,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     {/* RECENT TRANSACTIONS */}
                                     {adminData.recent_transactions && adminData.recent_transactions.length > 0 && (
                                         <>
-                                            <h3 style={styles.sectionTitle}>📜 RECENT TRANSACTIONS</h3>
+                                            <h3 style={styles.sectionTitle}>RECENT TRANSACTIONS</h3>
                                             <table style={styles.dataTable}>
                                                 <thead>
                                                     <tr>
@@ -513,7 +504,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                                                 </span>
                                                             </td>
                                                             <td style={styles.td}>
-                                                                {t.transaction_type === 'purchase' ? '🛒 BUY' : '💰 SELL'}
+                                                                {t.transaction_type === 'purchase' ? 'BUY' : 'SELL'}
                                                             </td>
                                                             <td style={styles.td}>{t.gear_name}</td>
                                                             <td style={{ ...styles.td, color: t.transaction_type === 'purchase' ? '#00f0ff' : '#00ff88', fontWeight: 'bold' }}>
@@ -539,25 +530,25 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                                     )}
 
                                     {/* BOT GENERATOR */}
-                                    <h3 style={styles.sectionTitle}>🤖 QUICK TEST DATA GENERATOR</h3>
+                                    <h3 style={styles.sectionTitle}>QUICK TEST DATA GENERATOR</h3>
                                     <div style={styles.botControls}>
                                         <button
                                             onClick={() => generateBots('civilian')}
-                                            style={{ ...styles.botBtn, background: 'linear-gradient(90deg, #ffaa00, #ff6600)' }}
+                                            style={{ ...styles.botBtn, background: 'linear-gradient(90deg, #d1d5db, #9ca3af)' }}
                                         >
-                                            👤 Generate 3 Civilians
+                                            Generate 3 Civilians
                                         </button>
                                         <button
                                             onClick={() => generateBots('hero')}
-                                            style={{ ...styles.botBtn, background: 'linear-gradient(90deg, #00f0ff, #00aaff)' }}
+                                            style={{ ...styles.botBtn, background: 'linear-gradient(90deg, #e5e7eb, #9ca3af)' }}
                                         >
-                                            🦸 Generate 3 Heroes
+                                            Generate 3 Heroes
                                         </button>
                                         <button
                                             onClick={() => generateBots('villain')}
-                                            style={{ ...styles.botBtn, background: 'linear-gradient(90deg, #ff0044, #ff00ff)' }}
+                                            style={{ ...styles.botBtn, background: 'linear-gradient(90deg, #a8acb9, #7c8798)' }}
                                         >
-                                            🦹 Generate 3 Villains
+                                            Generate 3 Villains
                                         </button>
                                     </div>
 
@@ -570,7 +561,7 @@ export default function Dashboard({ user: initialUser, onLogout, onShowCombat, o
                         </div>
                     ) : (
                         <div>
-                            <h2 style={styles.panelTitle}>🏪 MARKETPLACE</h2>
+                            <h2 style={styles.panelTitle}>MARKETPLACE</h2>
                             <div style={styles.tabs}>
                                 {['armory', 'black-market', 'inventory'].map(t => (
                                     <button
@@ -649,9 +640,9 @@ function GearCard({ item, actionLabel, onAction, disabled, actionColor }) {
                 {item.slot?.toUpperCase()} • {item.source?.toUpperCase()}
             </div>
             <div style={styles.gearStats}>
-                <span>⚡ {item.bioCapacity}</span>
-                <span>🔄 {item.recoveryRate}</span>
-                <span>⚠️ {item.riskModifier}</span>
+                <span>{item.bioCapacity}</span>
+                <span>{item.recoveryRate}</span>
+                <span>{item.riskModifier}</span>
             </div>
             <div style={styles.gearPrice}>
                 <span style={{ color: '#00ff88', fontWeight: 'bold' }}>₵{item.price?.toLocaleString()}</span>
@@ -760,19 +751,57 @@ const styles = {
     actionRow: {
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '12px',
         flexWrap: 'wrap',
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
+        width: '100%'
+    },
+    primaryNav: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: '6px',
+        flexWrap: 'wrap',
+        flex: '1 1 auto'
+    },
+    utilityNav: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: '6px',
+        flexWrap: 'wrap',
+        paddingTop: '10px',
+        marginTop: '2px',
+        borderTop: '1px solid rgba(148,163,184,0.25)'
+    },
+    moreBtn: {
+        padding: '8px 12px',
+        minWidth: '64px',
+        background: 'transparent',
+        border: '1px solid #6b7280',
+        color: '#d1d5db',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: '0.7rem',
+        letterSpacing: '1px',
+        whiteSpace: 'nowrap'
+    },
+    moreBtnActive: {
+        background: '#374151',
+        color: '#f3f4f6'
     },
 
     // ============================================
     // BUTTONS
     // ============================================
     combatBtn: {
-        padding: '8px 14px',
-        background: 'linear-gradient(90deg, #ff0044, #ff00ff)',
-        border: 'none',
-        color: 'white',
+        padding: '8px 12px',
+        minWidth: '78px',
+        background: '#374151',
+        border: '1px solid #6b7280',
+        color: '#f3f4f6',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
@@ -782,10 +811,11 @@ const styles = {
         whiteSpace: 'nowrap'
     },
     craftBtn: {
-        padding: '8px 14px',
-        background: 'linear-gradient(90deg, #ffaa00, #ff6600)',
-        border: 'none',
-        color: '#0a0a1a',
+        padding: '8px 12px',
+        minWidth: '78px',
+        background: '#374151',
+        border: '1px solid #6b7280',
+        color: '#f3f4f6',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
@@ -795,10 +825,11 @@ const styles = {
         whiteSpace: 'nowrap'
     },
     factionBtn: {
-        padding: '8px 14px',
-        background: 'linear-gradient(90deg, #00f0ff, #00ff88)',
-        border: 'none',
-        color: '#0a0a1a',
+        padding: '8px 12px',
+        minWidth: '78px',
+        background: '#374151',
+        border: '1px solid #6b7280',
+        color: '#f3f4f6',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
@@ -808,10 +839,11 @@ const styles = {
         whiteSpace: 'nowrap'
     },
     eventBtn: {
-        padding: '8px 14px',
-        background: 'linear-gradient(90deg, #ff00ff, #ffaa00)',
-        border: 'none',
-        color: '#0a0a1a',
+        padding: '8px 12px',
+        minWidth: '78px',
+        background: '#374151',
+        border: '1px solid #6b7280',
+        color: '#f3f4f6',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
@@ -821,10 +853,11 @@ const styles = {
         whiteSpace: 'nowrap'
     },
     rewardBtn: {
-        padding: '8px 14px',
-        background: 'linear-gradient(90deg, #00ff88, #00f0ff)',
-        border: 'none',
-        color: '#0a0a1a',
+        padding: '8px 12px',
+        minWidth: '78px',
+        background: '#374151',
+        border: '1px solid #6b7280',
+        color: '#f3f4f6',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
@@ -834,7 +867,8 @@ const styles = {
         whiteSpace: 'nowrap'
     },
     chatBtn: {
-        padding: '8px 14px',
+        padding: '8px 12px',
+        minWidth: '64px',
         background: 'rgba(0,240,255,0.1)',
         border: '1px solid rgba(0,240,255,0.3)',
         color: '#8888cc',
@@ -854,6 +888,7 @@ const styles = {
     },
     toggleBtn: {
         padding: '8px 12px',
+        minWidth: '92px',
         background: 'rgba(0,240,255,0.05)',
         border: '1px solid rgba(0,240,255,0.2)',
         color: '#8888cc',
@@ -1108,9 +1143,9 @@ const styles = {
     },
     leaderboardBtn: {
         padding: '8px 14px',
-        background: 'linear-gradient(90deg, #ffd700, #ffaa00)',
-        border: 'none',
-        color: '#0a0a1a',
+        background: '#374151',
+        border: '1px solid #6b7280',
+        color: '#f3f4f6',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
@@ -1121,9 +1156,9 @@ const styles = {
     },
     replayBtn: {
         padding: '8px 14px',
-        background: 'linear-gradient(90deg, #00f0ff, #ff00ff)',
-        border: 'none',
-        color: '#0a0a1a',
+        background: '#374151',
+        border: '1px solid #6b7280',
+        color: '#f3f4f6',
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',

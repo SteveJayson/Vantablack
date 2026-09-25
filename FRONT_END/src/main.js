@@ -84,7 +84,7 @@ async function checkHealth(isManual = false) {
         state.backendOnline = health.online;
 
         if (health.online) {
-            if (DOM.connectionStatus) DOM.connectionStatus.textContent = `CONNECTED (${health.latency}ms) ✅`;
+            if (DOM.connectionStatus) DOM.connectionStatus.textContent = `CONNECTED (${health.latency}ms)`;
             if (DOM.statusDot) DOM.statusDot.className = 'dot online';
             if (DOM.backendOfflineBanner) DOM.backendOfflineBanner.classList.add('hidden');
 
@@ -95,7 +95,7 @@ async function checkHealth(isManual = false) {
                 await loadInventory(1);
             }
         } else {
-            if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE ⚠️';
+            if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE';
             if (DOM.statusDot) DOM.statusDot.className = 'dot offline';
             if (DOM.backendOfflineBanner) {
                 DOM.backendOfflineBanner.classList.remove('hidden');
@@ -104,7 +104,7 @@ async function checkHealth(isManual = false) {
         }
     } catch (err) {
         state.backendOnline = false;
-        if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE ⚠️';
+        if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE';
         if (DOM.statusDot) DOM.statusDot.className = 'dot offline';
         if (DOM.backendOfflineBanner) DOM.backendOfflineBanner.classList.remove('hidden');
     } finally {
@@ -136,11 +136,11 @@ async function init() {
         // Periodic health check every 10 seconds
         setInterval(() => checkHealth(false), 10000);
 
-        console.log('✅ Vantablack initialized');
-        console.log(`📡 API Base URL: ${getApiBaseUrl()}`);
+        console.log('Vantablack initialized');
+        console.log(`API Base URL: ${getApiBaseUrl()}`);
     } catch (error) {
-        console.error('❌ Initialization error:', error);
-        if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE ⚠️';
+        console.error('Initialization error:', error);
+        if (DOM.connectionStatus) DOM.connectionStatus.textContent = 'OFFLINE';
         if (DOM.statusDot) DOM.statusDot.className = 'dot offline';
     }
 }
@@ -219,11 +219,11 @@ function renderLoadout() {
                 <div class="gear-item">
                     <span class="gear-name">${gear.name || gear.id}</span>
                     <div class="gear-stats">
-                        <span>⚡ ${gear.bioCapacity || 0}</span>
-                        <span>🔄 ${gear.recoveryRate || 0}</span>
-                        <span>⚠️ ${gear.riskModifier || 0}</span>
+                        <span>${gear.bioCapacity || 0}</span>
+                        <span>${gear.recoveryRate || 0}</span>
+                        <span>${gear.riskModifier || 0}</span>
                     </div>
-                    <button class="remove-gear" data-slot="${slot}">✕ Remove</button>
+                    <button class="remove-gear" data-slot="${slot}">Remove</button>
                 </div>
             `;
         } else {
@@ -273,12 +273,12 @@ function renderMarketplace(tab) {
                     <div class="gear-name">${item.name}</div>
                     <div class="gear-meta">
                         <span>${item.slot?.toUpperCase() || 'UNKNOWN'}</span>
-                        ${isEquipped ? '<span style="color: var(--success-color)">✅ EQUIPPED</span>' : ''}
+                        ${isEquipped ? '<span style="color: var(--success-color)">EQUIPPED</span>' : ''}
                     </div>
                     <div class="gear-stats">
-                        <span class="stat-bio">⚡ ${item.bioCapacity || 0}</span>
-                        <span>🔄 ${item.recoveryRate || 0}</span>
-                        <span class="stat-risk">⚠️ ${item.riskModifier || 0}</span>
+                        <span class="stat-bio">${item.bioCapacity || 0}</span>
+                        <span>${item.recoveryRate || 0}</span>
+                        <span class="stat-risk">${item.riskModifier || 0}</span>
                     </div>
                     <div class="gear-price">
                         <button class="purchase-btn" onclick="equipFromInventory('${item.gearId || item.id}')">
@@ -299,14 +299,14 @@ function renderMarketplace(tab) {
                         <span>${item.source?.toUpperCase() || 'UNKNOWN'}</span>
                     </div>
                     <div class="gear-stats">
-                        <span class="stat-bio">⚡ ${item.bioCapacity || 0}</span>
-                        <span>🔄 ${item.recoveryRate || 0}</span>
-                        <span class="stat-risk">⚠️ ${item.riskModifier || 0}</span>
+                        <span class="stat-bio">${item.bioCapacity || 0}</span>
+                        <span>${item.recoveryRate || 0}</span>
+                        <span class="stat-risk">${item.riskModifier || 0}</span>
                     </div>
                     <div class="gear-price">
-                        <span class="price">💰 ${item.price} credits</span>
+                        <span class="price">${item.price} credits</span>
                         ${isOwned ?
-                    '<span class="owned-tag">✅ OWNED</span>' :
+                    '<span class="owned-tag">OWNED</span>' :
                     `<button class="purchase-btn" onclick="handlePurchase('${item.id}')" ${!canAfford ? 'disabled' : ''}>
                                 ${canAfford ? 'PURCHASE' : 'INSUFFICIENT CREDITS'}
                             </button>`
@@ -343,17 +343,17 @@ function updateTelemetry(combatant) {
     // Update warnings
     let warnings = [];
     if (riskPercent > 70) {
-        warnings.push('⚠️ CRITICAL: Extreme burnout risk detected!');
+        warnings.push('CRITICAL: Extreme burnout risk detected!');
     } else if (riskPercent > 50) {
-        warnings.push('⚠️ WARNING: Elevated burnout risk');
+        warnings.push('WARNING: Elevated burnout risk');
     } else if (riskPercent > 30) {
-        warnings.push('⚠️ Moderate risk level');
+        warnings.push('Moderate risk level');
     } else {
-        warnings.push('✅ LOW RISK: System stable');
+        warnings.push('LOW RISK: System stable');
     }
 
     if (capacityPercent > 80) {
-        warnings.push('⚡ High energy output');
+        warnings.push('High energy output');
     }
 
     DOM.telemetryWarnings.textContent = warnings.join(' | ');
@@ -381,7 +381,7 @@ async function handlePurchase(gearId) {
 
     try {
         const result = await purchaseGear(state.combatant.id, gearId);
-        alert(`✅ Purchased ${gear.name}!`);
+        alert(`Purchased ${gear.name}!`);
 
         // Refresh data
         await loadCombatant(state.combatant.id);
@@ -389,7 +389,7 @@ async function handlePurchase(gearId) {
         renderMarketplace(state.currentTab);
 
     } catch (error) {
-        alert(`❌ Purchase failed: ${error.message}`);
+        alert(`Purchase failed: ${error.message}`);
         console.error('Purchase error:', error);
     }
 }
@@ -406,7 +406,7 @@ async function validateCurrentLoadout() {
 
     if (!hasAllSlots) {
         DOM.validationResult.className = 'validation-result warning';
-        DOM.validationResult.textContent = '⚠️ Not all slots are filled. Please equip all 5 slots.';
+        DOM.validationResult.textContent = 'Not all slots are filled. Please equip all 5 slots.';
         DOM.validationResult.style.display = 'block';
         return;
     }
@@ -417,7 +417,7 @@ async function validateCurrentLoadout() {
         displayValidationResult(result);
     } catch (error) {
         DOM.validationResult.className = 'validation-result error';
-        DOM.validationResult.textContent = `❌ Validation failed: ${error.message}`;
+        DOM.validationResult.textContent = `Validation failed: ${error.message}`;
         DOM.validationResult.style.display = 'block';
     }
 }
@@ -431,7 +431,7 @@ function displayValidationResult(result) {
 
     DOM.validationResult.className = `validation-result ${statusClass}`;
     DOM.validationResult.innerHTML = `
-        <div><strong>${status === 'fatal' ? '❌ FATAL' : (status === 'success' ? '✅ FEASIBLE' : '⚠️ WARNING')}</strong></div>
+        <div><strong>${status === 'fatal' ? 'FATAL' : (status === 'success' ? 'FEASIBLE' : 'WARNING')}</strong></div>
         <div style="font-size: 0.65rem; margin-top: 5px; color: var(--text-secondary);">
             <div>Bio Capacity: ${stats.finalBioCapacity || 0}</div>
             <div>Energy Drain: ${stats.effectiveDrain || 0} kW</div>
@@ -452,7 +452,7 @@ async function equipCurrentLoadout() {
     const hasAllSlots = slots.every(slot => state.loadout[slot] !== null);
 
     if (!hasAllSlots) {
-        alert('⚠️ Please fill all 5 slots before equipping.');
+        alert('Please fill all 5 slots before equipping.');
         return;
     }
 
@@ -460,12 +460,12 @@ async function equipCurrentLoadout() {
     try {
         const validation = await validateLoadout(state.combatant.id, state.loadout);
         if (validation.isFatal) {
-            alert('❌ FATAL: This loadout would exceed bio capacity!');
+            alert('FATAL: This loadout would exceed bio capacity!');
             displayValidationResult(validation);
             return;
         }
     } catch (error) {
-        alert(`❌ Validation failed: ${error.message}`);
+        alert(`Validation failed: ${error.message}`);
         return;
     }
 
@@ -473,11 +473,11 @@ async function equipCurrentLoadout() {
 
     try {
         await equipLoadout(state.combatant.id, state.loadout);
-        alert('✅ Loadout equipped successfully!');
+        alert('Loadout equipped successfully!');
         await loadCombatant(state.combatant.id);
         renderLoadout();
     } catch (error) {
-        alert(`❌ Failed to equip: ${error.message}`);
+        alert(`Failed to equip: ${error.message}`);
     }
 }
 
@@ -555,7 +555,7 @@ function setupEventListeners() {
 
             // Show a quick selection dialog
             const options = itemsForSlot.map((item, index) =>
-                `${index + 1}. ${item.name} (⚡${item.bioCapacity} ⚠️${item.riskModifier} 💰${item.price})`
+                `${index + 1}. ${item.name} (${item.bioCapacity} ${item.riskModifier} ${item.price})`
             ).join('\n');
 
             const choice = prompt(
@@ -593,4 +593,4 @@ window.equipFromInventory = async (gearId) => {
 // ============================================
 document.addEventListener('DOMContentLoaded', init);
 
-console.log('🚀 Vantablack Frontend Loaded');
+console.log('Vantablack Frontend Loaded');

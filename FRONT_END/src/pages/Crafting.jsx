@@ -78,7 +78,7 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
             const data = await res.json();
 
             if (data.success) {
-                setSuccess(`✅ Crafted ${data.data.crafted.name}! New balance: ₵${data.data.newBalance.toLocaleString()}`);
+                setSuccess(`Crafted ${data.data.crafted.name}! New balance: ₵${data.data.newBalance.toLocaleString()}`);
                 setSelectedRecipe(null);
                 loadData();
                 if (onCraftComplete) onCraftComplete(data.data);
@@ -107,7 +107,7 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
             const data = await res.json();
 
             if (data.success) {
-                setSuccess(`✅ Disassembled ${data.data.gearName} for ₵${data.data.refund.toLocaleString()}`);
+                setSuccess(`Disassembled ${data.data.gearName} for ₵${data.data.refund.toLocaleString()}`);
                 loadData();
                 if (onCraftComplete) onCraftComplete(data.data);
             } else {
@@ -122,8 +122,8 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
         <div style={styles.container}>
             {/* HEADER */}
             <div style={styles.header}>
-                <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                <h1 style={styles.title}>🔨 GEAR CRAFTING</h1>
+                <button onClick={onBack} style={styles.backBtn}>Back</button>
+                <h1 style={styles.title}>GEAR CRAFTING</h1>
                 <div style={styles.userBadge}>
                     <span>₵{user.credits?.toLocaleString()}</span>
                 </div>
@@ -135,18 +135,18 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                     onClick={() => setTab('craft')}
                     style={{ ...styles.tab, ...(tab === 'craft' ? styles.tabActive : {}) }}
                 >
-                    🔨 CRAFT
+                    CRAFT
                 </button>
                 <button
                     onClick={() => setTab('disassemble')}
                     style={{ ...styles.tab, ...(tab === 'disassemble' ? styles.tabActive : {}) }}
                 >
-                    ♻️ DISASSEMBLE
+                    DISASSEMBLE
                 </button>
             </div>
 
-            {error && <div style={styles.errorBox}>❌ {error}</div>}
-            {success && <div style={styles.successBox}>✅ {success}</div>}
+            {error && <div style={styles.errorBox}>{error}</div>}
+            {success && <div style={styles.successBox}>{success}</div>}
 
             {loading ? (
                 <div style={styles.loading}>Loading...</div>
@@ -154,7 +154,7 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                 <div style={styles.grid}>
                     {/* RECIPES LIST */}
                     <div style={styles.panel}>
-                        <h2 style={styles.panelTitle}>📜 AVAILABLE RECIPES</h2>
+                        <h2 style={styles.panelTitle}>AVAILABLE RECIPES</h2>
                         <div style={styles.recipeList}>
                             {recipes.map(r => (
                                 <div
@@ -162,8 +162,8 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                                     onClick={() => setSelectedRecipe(r)}
                                     style={{
                                         ...styles.recipeCard,
-                                        borderColor: selectedRecipe?.id === r.id ? '#00f0ff' : 'rgba(0,240,255,0.2)',
-                                        background: selectedRecipe?.id === r.id ? 'rgba(0,240,255,0.1)' : 'rgba(0,0,0,0.3)'
+                                        borderColor: selectedRecipe?.id === r.id ? '#d1d5db' : 'rgba(148, 163, 184, 0.25)',
+                                        background: selectedRecipe?.id === r.id ? 'rgba(148, 163, 184, 0.08)' : 'rgba(0,0,0,0.3)'
                                     }}
                                 >
                                     <div style={styles.recipeHeader}>
@@ -171,12 +171,12 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                                         <div style={styles.tierBadge}>T{r.tier}</div>
                                     </div>
                                     <div style={styles.recipeStats}>
-                                        <span>⚡ {r.bioCapacity}</span>
-                                        <span>🔄 {r.recoveryRate}</span>
-                                        <span>⚠️ {r.riskModifier}</span>
+                                        <span>{r.bioCapacity}</span>
+                                        <span>{r.recoveryRate}</span>
+                                        <span>{r.riskModifier}</span>
                                     </div>
                                     <div style={styles.recipeCost}>
-                                        💰 ₵{r.requiredCredits.toLocaleString()}
+                                        ₵{r.requiredCredits.toLocaleString()}
                                     </div>
                                 </div>
                             ))}
@@ -185,7 +185,7 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
 
                     {/* RECIPE DETAIL */}
                     <div style={styles.panel}>
-                        <h2 style={styles.panelTitle}>🔨 CRAFTING DETAILS</h2>
+                        <h2 style={styles.panelTitle}>CRAFTING DETAILS</h2>
 
                         {!selectedRecipe ? (
                             <div style={styles.loading}>Select a recipe to craft</div>
@@ -195,21 +195,21 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                                     <h3 style={styles.resultName}>{selectedRecipe.resultName}</h3>
                                     <div style={styles.resultStats}>
                                         <div style={styles.resultStat}>
-                                            <div style={styles.statValue}>⚡ {selectedRecipe.bioCapacity}</div>
+                                            <div style={styles.statValue}>{selectedRecipe.bioCapacity}</div>
                                             <div style={styles.statLabel}>BIO CAP</div>
                                         </div>
                                         <div style={styles.resultStat}>
-                                            <div style={styles.statValue}>🔄 {selectedRecipe.recoveryRate}</div>
+                                            <div style={styles.statValue}>{selectedRecipe.recoveryRate}</div>
                                             <div style={styles.statLabel}>RECOVERY</div>
                                         </div>
                                         <div style={styles.resultStat}>
-                                            <div style={styles.statValue}>⚠️ {selectedRecipe.riskModifier}</div>
+                                            <div style={styles.statValue}>{selectedRecipe.riskModifier}</div>
                                             <div style={styles.statLabel}>RISK</div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <h4 style={styles.sectionTitle}>📦 REQUIRED MATERIALS</h4>
+                                <h4 style={styles.sectionTitle}>REQUIRED MATERIALS</h4>
                                 <div style={styles.materialsList}>
                                     {selectedRecipe.materialDetails.map(mat => {
                                         const owned = inventory.filter(i => i.gearId === mat.id).length;
@@ -218,28 +218,28 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                                         return (
                                             <div key={mat.id} style={{
                                                 ...styles.materialItem,
-                                                borderColor: hasEnough ? 'rgba(0,255,136,0.3)' : 'rgba(255,0,68,0.3)',
-                                                background: hasEnough ? 'rgba(0,255,136,0.05)' : 'rgba(255,0,68,0.05)'
+                                                borderColor: hasEnough ? 'rgba(148, 163, 184, 0.35)' : 'rgba(148, 163, 184, 0.2)',
+                                                background: hasEnough ? 'rgba(148, 163, 184, 0.06)' : 'rgba(255,255,255,0.02)'
                                             }}>
                                                 <div>
                                                     <div style={styles.matName}>{mat.name}</div>
                                                     <div style={styles.matId}>{mat.id}</div>
                                                 </div>
                                                 <div style={{
-                                                    color: hasEnough ? '#00ff88' : '#ff0044',
+                                                    color: hasEnough ? '#d1d5db' : '#e5e7eb',
                                                     fontWeight: 'bold'
                                                 }}>
-                                                    {owned} / {mat.quantity} {hasEnough ? '✅' : '❌'}
+                                                    {owned} / {mat.quantity} {hasEnough ? 'OK' : 'LOW'}
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
 
-                                <h4 style={styles.sectionTitle}>💰 CREDITS</h4>
+                                <h4 style={styles.sectionTitle}>CREDITS</h4>
                                 <div style={styles.creditsRow}>
                                     <span>Required:</span>
-                                    <span style={{ color: user.credits >= selectedRecipe.requiredCredits ? '#00ff88' : '#ff0044', fontWeight: 'bold' }}>
+                                    <span style={{ color: user.credits >= selectedRecipe.requiredCredits ? '#d1d5db' : '#e5e7eb', fontWeight: 'bold' }}>
                                         ₵{selectedRecipe.requiredCredits.toLocaleString()}
                                     </span>
                                 </div>
@@ -257,12 +257,12 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                                         cursor: (crafting || !canCraft(selectedRecipe).ok) ? 'not-allowed' : 'pointer'
                                     }}
                                 >
-                                    {crafting ? '⏳ CRAFTING...' : '🔨 CRAFT NOW'}
+                                    {crafting ? 'CRAFTING...' : 'CRAFT NOW'}
                                 </button>
 
                                 {!canCraft(selectedRecipe).ok && (
                                     <div style={styles.reasonBox}>
-                                        ⚠️ {canCraft(selectedRecipe).reason}
+                                        {canCraft(selectedRecipe).reason}
                                     </div>
                                 )}
                             </div>
@@ -272,7 +272,7 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
             ) : (
                 /* DISASSEMBLE TAB */
                 <div style={styles.panel}>
-                    <h2 style={styles.panelTitle}>♻️ DISASSEMBLE GEAR</h2>
+                    <h2 style={styles.panelTitle}>DISASSEMBLE GEAR</h2>
                     <p style={styles.disassembleNote}>
                         Break down gear for 40% of its value
                     </p>
@@ -288,14 +288,14 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
                                         {item.slot?.toUpperCase()} • T{item.tier || 1}
                                     </div>
                                     <div style={styles.gearPrice}>
-                                        <span style={{ color: '#00ff88' }}>
+                                        <span style={{ color: '#d1d5db' }}>
                                             +₵{Math.floor(item.price * 0.4).toLocaleString()}
                                         </span>
                                         <button
                                             onClick={() => disassembleItem(item.inventoryId)}
                                             style={styles.disassembleBtn}
                                         >
-                                            ♻️ BREAK DOWN
+                                            BREAK DOWN
                                         </button>
                                     </div>
                                 </div>
@@ -310,45 +310,45 @@ export default function Crafting({ user, onBack, onCraftComplete }) {
 
 const styles = {
     container: { minHeight: '100vh', background: '#0a0a1a', color: '#e0e0ff', fontFamily: 'monospace', padding: '20px' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'rgba(10, 10, 30, 0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '12px', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' },
-    backBtn: { padding: '8px 16px', background: 'rgba(0,240,255,0.1)', border: '1px solid #00f0ff', color: '#00f0ff', borderRadius: '6px', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold' },
-    title: { color: '#00f0ff', fontSize: '1.5rem', margin: 0, letterSpacing: '4px' },
-    userBadge: { padding: '8px 16px', background: 'rgba(0,255,136,0.1)', border: '1px solid #00ff88', color: '#00ff88', borderRadius: '6px', fontWeight: 'bold' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(148, 163, 184, 0.25)', borderRadius: '12px', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' },
+    backBtn: { padding: '8px 16px', background: 'rgba(148, 163, 184, 0.12)', border: '1px solid #d1d5db', color: '#d1d5db', borderRadius: '6px', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold' },
+    title: { color: '#d1d5db', fontSize: '1.5rem', margin: 0, letterSpacing: '4px' },
+    userBadge: { padding: '8px 16px', background: 'rgba(148, 163, 184, 0.08)', border: '1px solid #d1d5db', color: '#d1d5db', borderRadius: '6px', fontWeight: 'bold' },
     tabs: { display: 'flex', gap: '10px', marginBottom: '20px' },
-    tab: { flex: 1, padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,240,255,0.2)', color: '#8888cc', borderRadius: '8px', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: '2px' },
-    tabActive: { background: 'rgba(0,240,255,0.15)', borderColor: '#00f0ff', color: '#00f0ff' },
-    errorBox: { padding: '12px', background: 'rgba(255,0,68,0.1)', border: '1px solid #ff0044', color: '#ff0044', borderRadius: '8px', marginBottom: '20px', fontSize: '0.85rem' },
-    successBox: { padding: '12px', background: 'rgba(0,255,136,0.1)', border: '1px solid #00ff88', color: '#00ff88', borderRadius: '8px', marginBottom: '20px', fontSize: '0.85rem' },
+    tab: { flex: 1, padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(148, 163, 184, 0.25)', color: '#8888cc', borderRadius: '8px', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: '2px' },
+    tabActive: { background: 'rgba(148, 163, 184, 0.12)', borderColor: '#d1d5db', color: '#d1d5db' },
+    errorBox: { padding: '12px', background: 'rgba(148, 163, 184, 0.08)', border: '1px solid #9ca3af', color: '#e5e7eb', borderRadius: '8px', marginBottom: '20px', fontSize: '0.85rem' },
+    successBox: { padding: '12px', background: 'rgba(148, 163, 184, 0.08)', border: '1px solid #d1d5db', color: '#d1d5db', borderRadius: '8px', marginBottom: '20px', fontSize: '0.85rem' },
     loading: { textAlign: 'center', color: '#8888cc', fontSize: '0.85rem', padding: '30px' },
     grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' },
-    panel: { background: 'rgba(10, 10, 30, 0.85)', border: '1px solid rgba(0,240,255,0.15)', borderRadius: '12px', padding: '20px' },
-    panelTitle: { color: '#00f0ff', fontSize: '0.85rem', marginBottom: '15px', letterSpacing: '2px', marginTop: 0, borderBottom: '1px solid rgba(0,240,255,0.2)', paddingBottom: '10px' },
+    panel: { background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '12px', padding: '20px' },
+    panelTitle: { color: '#d1d5db', fontSize: '0.85rem', marginBottom: '15px', letterSpacing: '2px', marginTop: 0, borderBottom: '1px solid rgba(148, 163, 184, 0.2)', paddingBottom: '10px' },
     recipeList: { display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '600px', overflowY: 'auto' },
     recipeCard: { padding: '12px', border: '2px solid', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s' },
     recipeHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
     recipeName: { fontWeight: 'bold', fontSize: '0.9rem', color: '#e0e0ff' },
-    tierBadge: { padding: '2px 8px', background: 'rgba(255,170,0,0.2)', color: '#ffaa00', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold' },
+    tierBadge: { padding: '2px 8px', background: 'rgba(148, 163, 184, 0.12)', color: '#cbd5e1', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold' },
     recipeStats: { display: 'flex', gap: '10px', fontSize: '0.7rem', marginBottom: '6px' },
     recipeCost: { fontSize: '0.75rem', color: '#00ff88', fontWeight: 'bold' },
-    detailCard: { padding: '20px', background: 'rgba(0,240,255,0.05)', borderRadius: '10px', marginBottom: '20px', textAlign: 'center' },
-    resultName: { color: '#00f0ff', fontSize: '1.2rem', marginBottom: '15px', marginTop: 0 },
+    detailCard: { padding: '20px', background: 'rgba(148, 163, 184, 0.06)', borderRadius: '10px', marginBottom: '20px', textAlign: 'center' },
+    resultName: { color: '#d1d5db', fontSize: '1.2rem', marginBottom: '15px', marginTop: 0 },
     resultStats: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' },
     resultStat: { padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', textAlign: 'center' },
-    statValue: { fontSize: '1rem', fontWeight: 'bold', color: '#00f0ff' },
+    statValue: { fontSize: '1rem', fontWeight: 'bold', color: '#d1d5db' },
     statLabel: { fontSize: '0.6rem', color: '#8888cc', marginTop: '4px' },
-    sectionTitle: { color: '#00f0ff', fontSize: '0.75rem', marginTop: '20px', marginBottom: '10px', letterSpacing: '2px' },
+    sectionTitle: { color: '#d1d5db', fontSize: '0.75rem', marginTop: '20px', marginBottom: '10px', letterSpacing: '2px' },
     materialsList: { display: 'flex', flexDirection: 'column', gap: '8px' },
     materialItem: { padding: '10px 14px', border: '1px solid', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' },
     matName: { fontWeight: 'bold', color: '#e0e0ff' },
     matId: { fontSize: '0.6rem', color: '#8888cc' },
     creditsRow: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '0.85rem' },
-    craftBtn: { width: '100%', padding: '15px', background: 'linear-gradient(90deg, #00f0ff, #ff00ff)', color: '#0a0a1a', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'monospace', letterSpacing: '2px', marginTop: '20px' },
-    reasonBox: { padding: '10px', background: 'rgba(255,170,0,0.1)', border: '1px solid #ffaa00', color: '#ffaa00', borderRadius: '6px', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' },
+    craftBtn: { width: '100%', padding: '15px', background: '#d1d5db', color: '#111827', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'monospace', letterSpacing: '2px', marginTop: '20px' },
+    reasonBox: { padding: '10px', background: 'rgba(148, 163, 184, 0.08)', border: '1px solid #cbd5e1', color: '#d1d5db', borderRadius: '6px', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' },
     disassembleNote: { fontSize: '0.75rem', color: '#8888cc', marginBottom: '15px' },
     gearGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' },
-    gearCard: { padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,240,255,0.1)', borderRadius: '8px' },
+    gearCard: { padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(148, 163, 184, 0.15)', borderRadius: '8px' },
     gearName: { fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '4px' },
     gearMeta: { fontSize: '0.65rem', color: '#8888cc', marginBottom: '8px' },
-    gearPrice: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(0,240,255,0.1)' },
-    disassembleBtn: { padding: '6px 12px', background: 'rgba(255,170,0,0.2)', border: '1px solid #ffaa00', color: '#ffaa00', borderRadius: '6px', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.65rem' }
+    gearPrice: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(148, 163, 184, 0.12)' },
+    disassembleBtn: { padding: '6px 12px', background: 'rgba(148, 163, 184, 0.12)', border: '1px solid #cbd5e1', color: '#d1d5db', borderRadius: '6px', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.65rem' }
 };

@@ -64,7 +64,7 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                 setAttackResult(data.data);
                 loadData();
 
-                // ✅ Pass the new credits to parent
+                // Pass the new credits to parent
                 if (onAttackComplete) {
                     onAttackComplete(data.data.attackerNewCredits);
                 }
@@ -85,14 +85,14 @@ export default function Factions({ user, onBack, onAttackComplete }) {
 
     const getBonusIcon = (bonusType) => {
         const icons = {
-            'discount': '💰',
-            'credit_multiplier': '💵',
-            'crafting_bonus': '🔨',
-            'weather_resist': '🌤️',
-            'combat_power': '⚔️',
-            'loot_bonus': '🎁'
+            'discount': 'D',
+            'credit_multiplier': 'C',
+            'crafting_bonus': 'F',
+            'weather_resist': 'W',
+            'combat_power': 'P',
+            'loot_bonus': 'L'
         };
-        return icons[bonusType] || '✨';
+        return icons[bonusType] || 'N';
     };
 
     const getBonusLabel = (bonusType) => {
@@ -123,8 +123,8 @@ export default function Factions({ user, onBack, onAttackComplete }) {
         <div style={styles.container}>
             {/* HEADER */}
             <div style={styles.header}>
-                <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                <h1 style={styles.title}>🏴 FACTION WARS</h1>
+                <button onClick={onBack} style={styles.backBtn}>Back</button>
+                <h1 style={styles.title}>FACTION WARS</h1>
                 <div style={styles.factionBadge}>
                     <span style={{
                         padding: '6px 14px',
@@ -143,13 +143,13 @@ export default function Factions({ user, onBack, onAttackComplete }) {
             {summary && (
                 <div style={styles.summaryRow}>
                     <div style={{ ...styles.summaryCard, borderColor: '#00f0ff' }}>
-                        <div style={styles.summaryLabel}>🦸 HERO TERRITORIES</div>
+                        <div style={styles.summaryLabel}>HERO TERRITORIES</div>
                         <div style={{ ...styles.summaryValue, color: '#00f0ff' }}>
                             {summary.heroControlled} / {summary.total}
                         </div>
                     </div>
                     <div style={{ ...styles.summaryCard, borderColor: '#ff0044' }}>
-                        <div style={styles.summaryLabel}>🦹 VILLAIN TERRITORIES</div>
+                        <div style={styles.summaryLabel}>VILLAIN TERRITORIES</div>
                         <div style={{ ...styles.summaryValue, color: '#ff0044' }}>
                             {summary.villainControlled} / {summary.total}
                         </div>
@@ -157,13 +157,13 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                     {stats && (
                         <>
                             <div style={{ ...styles.summaryCard, borderColor: '#00f0ff' }}>
-                                <div style={styles.summaryLabel}>🦸 HERO POWER</div>
+                                <div style={styles.summaryLabel}>HERO POWER</div>
                                 <div style={{ ...styles.summaryValue, color: '#00f0ff' }}>
                                     {stats.heroes.power.toLocaleString()}
                                 </div>
                             </div>
                             <div style={{ ...styles.summaryCard, borderColor: '#ff0044' }}>
-                                <div style={styles.summaryLabel}>🦹 VILLAIN POWER</div>
+                                <div style={styles.summaryLabel}>VILLAIN POWER</div>
                                 <div style={{ ...styles.summaryValue, color: '#ff0044' }}>
                                     {stats.villains.power.toLocaleString()}
                                 </div>
@@ -173,12 +173,12 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                 </div>
             )}
 
-            {error && <div style={styles.errorBox}>❌ {error}</div>}
+            {error && <div style={styles.errorBox}>{error}</div>}
 
             <div style={styles.grid}>
                 {/* TERRITORIES */}
                 <div style={styles.panel}>
-                    <h2 style={styles.panelTitle}>🗺️ TERRITORIES</h2>
+                    <h2 style={styles.panelTitle}>TERRITORIES</h2>
 
                     <div style={styles.territoryList}>
                         {territories.map(t => {
@@ -226,15 +226,15 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                                             {getBonusIcon(t.bonusType)} {getBonusLabel(t.bonusType)} +{t.bonusValue}%
                                         </div>
                                         <div style={styles.defenseTag}>
-                                            🛡️ {t.defensePower.toLocaleString()}
+                                            {t.defensePower.toLocaleString()}
                                         </div>
                                     </div>
 
                                     {isEnemy && !attackResult && (
-                                        <div style={styles.attackHint}>⚔️ Click to attack</div>
+                                        <div style={styles.attackHint}>Click to attack</div>
                                     )}
                                     {!isEnemy && (
-                                        <div style={styles.friendlyHint}>✅ Your territory</div>
+                                        <div style={styles.friendlyHint}>Your territory</div>
                                     )}
                                 </div>
                             );
@@ -244,7 +244,7 @@ export default function Factions({ user, onBack, onAttackComplete }) {
 
                 {/* ATTACK PANEL */}
                 <div style={styles.panel}>
-                    <h2 style={styles.panelTitle}>⚔️ ATTACK PANEL</h2>
+                    <h2 style={styles.panelTitle}>ATTACK PANEL</h2>
 
                     {!attackResult ? (
                         <div>
@@ -257,15 +257,15 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                                         <div style={styles.targetMeta}>{selectedTerritory.region}</div>
                                         <div style={styles.targetStats}>
                                             <div style={styles.targetStat}>
-                                                <div style={styles.statLabel}>🛡️ Defense</div>
+                                                <div style={styles.statLabel}>Defense</div>
                                                 <div style={styles.statValue}>{selectedTerritory.defensePower.toLocaleString()}</div>
                                             </div>
                                             <div style={styles.targetStat}>
-                                                <div style={styles.statLabel}>⚔️ Your Power</div>
+                                                <div style={styles.statLabel}>Your Power</div>
                                                 <div style={styles.statValue}>{Math.round(user.bioCapacityMax * 0.8)}</div>
                                             </div>
                                             <div style={styles.targetStat}>
-                                                <div style={styles.statLabel}>🎯 Control</div>
+                                                <div style={styles.statLabel}>Control</div>
                                                 <div style={styles.statValue}>{selectedTerritory.controlPercentage}%</div>
                                             </div>
                                         </div>
@@ -287,7 +287,7 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                                             cursor: attacking ? 'not-allowed' : 'pointer'
                                         }}
                                     >
-                                        {attacking ? '⚔️ ATTACKING...' : '⚔️ ATTACK NOW!'}
+                                        {attacking ? 'ATTACKING...' : 'ATTACK NOW!'}
                                     </button>
                                 </>
                             )}
@@ -300,7 +300,7 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                                 borderColor: attackResult.result === 'victory' ? '#00ff88' : '#ff0044',
                                 color: attackResult.result === 'victory' ? '#00ff88' : '#ff0044'
                             }}>
-                                {attackResult.result === 'victory' ? '🏆 VICTORY!' : '💀 DEFEAT'}
+                                {attackResult.result === 'victory' ? 'VICTORY!' : 'DEFEAT'}
                             </div>
 
                             <div style={styles.logBox}>
@@ -311,16 +311,16 @@ export default function Factions({ user, onBack, onAttackComplete }) {
 
                             <div style={styles.resultStats}>
                                 <div style={styles.resultStat}>
-                                    <span style={styles.rewardLabel}>💰 Credits</span>
+                                    <span style={styles.rewardLabel}>Credits</span>
                                     <span style={{
                                         ...styles.rewardValue,
-                                        color: attackResult.creditsEarned > 0 ? '#00ff88' : '#ff0044'
+                                        color: attackResult.creditsEarned > 0 ? '#d1d5db' : '#b8beca'
                                     }}>
                                         {attackResult.creditsEarned > 0 ? '+' : ''}₵{attackResult.creditsEarned}
                                     </span>
                                 </div>
                                 <div style={styles.resultStat}>
-                                    <span style={styles.rewardLabel}>🎯 Control</span>
+                                    <span style={styles.rewardLabel}>Control</span>
                                     <span style={styles.rewardValue}>
                                         {attackResult.controlChange > 0 ? '-' : ''}{attackResult.controlChange}%
                                     </span>
@@ -328,7 +328,7 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                             </div>
 
                             <button onClick={resetAttack} style={styles.attackBtn}>
-                                🔄 ATTACK AGAIN
+                                ATTACK AGAIN
                             </button>
                         </div>
                     )}
@@ -336,7 +336,7 @@ export default function Factions({ user, onBack, onAttackComplete }) {
 
                 {/* HISTORY */}
                 <div style={styles.panel}>
-                    <h2 style={styles.panelTitle}>📜 RECENT ATTACKS</h2>
+                    <h2 style={styles.panelTitle}>RECENT ATTACKS</h2>
 
                     {history.length === 0 ? (
                         <div style={styles.loading}>No attacks yet</div>
@@ -365,7 +365,7 @@ export default function Factions({ user, onBack, onAttackComplete }) {
                                             color: h.result === 'victory' ? '#00ff88' : '#ff0044',
                                             fontWeight: 'bold'
                                         }}>
-                                            {h.result === 'victory' ? '🏆 WIN' : '💀 LOSS'}
+                                            {h.result === 'victory' ? 'WIN' : 'LOSS'}
                                         </span>
                                         <span style={{ color: '#8888cc', fontSize: '0.65rem' }}>
                                             {new Date(h.foughtAt).toLocaleTimeString()}

@@ -163,7 +163,7 @@ export default function NotificationBell({ user, onNavigate }) {
                 style={styles.bellBtn}
                 title="Notifications"
             >
-                🔔
+                ALERTS
                 {unreadCount > 0 && (
                     <span style={styles.badge}>
                         {unreadCount > 99 ? '99+' : unreadCount}
@@ -177,14 +177,14 @@ export default function NotificationBell({ user, onNavigate }) {
                     {/* HEADER */}
                     <div style={styles.dropdownHeader}>
                         <h3 style={styles.dropdownTitle}>
-                            🔔 NOTIFICATIONS
+                            NOTIFICATIONS
                             {unreadCount > 0 && (
                                 <span style={styles.headerBadge}>{unreadCount} new</span>
                             )}
                         </h3>
                         {unreadCount > 0 && (
                             <button onClick={markAllAsRead} style={styles.markAllBtn}>
-                                ✓ Mark all read
+                                Mark all read
                             </button>
                         )}
                     </div>
@@ -195,7 +195,6 @@ export default function NotificationBell({ user, onNavigate }) {
                             <div style={styles.loading}>Loading...</div>
                         ) : notifications.length === 0 ? (
                             <div style={styles.empty}>
-                                <div style={styles.emptyIcon}>🔕</div>
                                 <div style={styles.emptyText}>No notifications</div>
                             </div>
                         ) : (
@@ -211,7 +210,6 @@ export default function NotificationBell({ user, onNavigate }) {
                                         borderLeftColor: getPriorityColor(notification.priority)
                                     }}
                                 >
-                                    <div style={styles.notifIcon}>{notification.icon}</div>
                                     <div style={styles.notifContent}>
                                         <div style={styles.notifHeader}>
                                             <span style={{
@@ -230,7 +228,7 @@ export default function NotificationBell({ user, onNavigate }) {
                                         style={styles.deleteBtn}
                                         title="Delete"
                                     >
-                                        ✕
+                                        X
                                     </button>
                                 </div>
                             ))
@@ -263,8 +261,9 @@ const styles = {
         borderRadius: '6px',
         cursor: 'pointer',
         fontFamily: 'monospace',
-        fontSize: '1rem',
+        fontSize: '0.7rem',
         fontWeight: 'bold',
+        letterSpacing: '1px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -349,11 +348,6 @@ const styles = {
         textAlign: 'center',
         padding: '40px 20px'
     },
-    emptyIcon: {
-        fontSize: '2.5rem',
-        marginBottom: '10px',
-        opacity: 0.5
-    },
     emptyText: {
         color: '#8888cc',
         fontSize: '0.75rem'
@@ -367,10 +361,6 @@ const styles = {
         cursor: 'pointer',
         transition: 'all 0.2s',
         position: 'relative'
-    },
-    notifIcon: {
-        fontSize: '1.3rem',
-        flexShrink: 0
     },
     notifContent: {
         flex: 1,
@@ -408,7 +398,8 @@ const styles = {
         border: 'none',
         color: '#ff0044',
         cursor: 'pointer',
-        fontSize: '0.8rem',
+        fontSize: '0.75rem',
+        fontWeight: 'bold',
         padding: '4px',
         opacity: 0.6,
         flexShrink: 0

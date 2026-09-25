@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 const API = 'http://localhost:8080/api';
 
 const CURRENCIES = [
-    { code: 'PHP', symbol: '₱', name: 'Philippine Peso', flag: '🇵🇭' },
-    { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸' },
-    { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺' },
-    { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: '🇯🇵' },
-    { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧' },
-    { code: 'KRW', symbol: '₩', name: 'Korean Won', flag: '🇰🇷' },
-    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', flag: '🇨🇳' }
+    { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'EUR', symbol: '€', name: 'Euro' },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'KRW', symbol: '₩', name: 'Korean Won' },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' }
 ];
 
 export default function CurrencyWidget({ credits }) {
@@ -48,7 +48,7 @@ export default function CurrencyWidget({ credits }) {
 
     return (
         <div>
-            <h2 style={styles.title}>💱 REAL-WORLD VALUE</h2>
+            <h2 style={styles.title}>REAL-WORLD VALUE</h2>
 
             {/* Currency Selector */}
             <div style={styles.currencyGrid}>
@@ -62,7 +62,6 @@ export default function CurrencyWidget({ credits }) {
                         }}
                         title={c.name}
                     >
-                        <span style={styles.flag}>{c.flag}</span>
                         <span style={styles.code}>{c.code}</span>
                     </div>
                 ))}
@@ -71,7 +70,7 @@ export default function CurrencyWidget({ credits }) {
             {loading ? (
                 <div style={styles.loading}>Calculating...</div>
             ) : error ? (
-                <div style={styles.error}>❌ {error}</div>
+                <div style={styles.error}>{error}</div>
             ) : conversion && (
                 <>
                     {/* Main Display */}
@@ -98,15 +97,15 @@ export default function CurrencyWidget({ credits }) {
                     {/* Details */}
                     <div style={styles.details}>
                         <div style={styles.detailRow}>
-                            <span>💵 USD Value</span>
+                            <span>USD Value</span>
                             <span>${conversion.usd_value.toLocaleString()}</span>
                         </div>
                         <div style={styles.detailRow}>
-                            <span>📊 Exchange Rate</span>
+                            <span>Exchange Rate</span>
                             <span>{conversion.exchange_rate}</span>
                         </div>
                         <div style={styles.detailRow}>
-                            <span>💠 ₵1 Credit</span>
+                            <span>₵1 Credit</span>
                             <span>$0.10 USD</span>
                         </div>
                     </div>

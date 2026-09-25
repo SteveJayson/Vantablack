@@ -14,27 +14,27 @@ export default function Register({ onRegister, onShowLogin }) {
     const roles = [
         {
             id: 'civilian',
-            icon: '👤',
+            icon: '',
             name: 'CIVILIAN',
-            color: '#ffaa00',
+            color: '#d1d5db',
             desc: 'Regular citizen. Safe and simple.',
-            benefits: ['✅ Buy gear', '❌ Cannot sell', '💰 500 credits']
+            benefits: ['Buy gear', 'Cannot sell', '500 credits']
         },
         {
             id: 'hero',
-            icon: '🦸',
+            icon: '',
             name: 'HERO',
-            color: '#00f0ff',
+            color: '#cbd5e1',
             desc: 'Defender of justice.',
-            benefits: ['✅ Buy gear', '✅ Sell gear', '💰 5,000 credits']
+            benefits: ['Buy gear', 'Sell gear', '5,000 credits']
         },
         {
             id: 'villain',
-            icon: '🦹',
+            icon: '',
             name: 'VILLAIN',
-            color: '#ff0044',
+            color: '#b7bec7',
             desc: 'Master of chaos.',
-            benefits: ['✅ Buy gear', '✅ Sell gear', '💰 5,000 credits']
+            benefits: ['Buy gear', 'Sell gear', '5,000 credits']
         }
     ];
 
@@ -69,8 +69,8 @@ export default function Register({ onRegister, onShowLogin }) {
     return (
         <div style={styles.container}>
             <div style={styles.card}>
-                <h1 style={styles.title}>⚡ VANTABLACK</h1>
-                <h2 style={styles.subtitle}>📝 CREATE ACCOUNT</h2>
+                <h1 style={styles.title}>VANTABLACK</h1>
+                <h2 style={styles.subtitle}>CREATE ACCOUNT</h2>
 
                 {error && <div style={styles.error}>{error}</div>}
 
@@ -111,7 +111,7 @@ export default function Register({ onRegister, onShowLogin }) {
                         />
                     </div>
 
-                    <h3 style={styles.roleTitle}>🎭 CHOOSE YOUR ROLE</h3>
+                    <h3 style={styles.roleTitle}>CHOOSE YOUR ROLE</h3>
 
                     <div style={styles.roleGrid}>
                         {roles.map(r => (
@@ -125,7 +125,6 @@ export default function Register({ onRegister, onShowLogin }) {
                                 }}
                                 onClick={() => setRole(r.id)}
                             >
-                                <div style={{ fontSize: '2.5rem' }}>{r.icon}</div>
                                 <div style={{
                                     color: r.color,
                                     fontWeight: 'bold',
@@ -146,7 +145,7 @@ export default function Register({ onRegister, onShowLogin }) {
                     </div>
 
                     <button type="submit" disabled={loading} style={styles.button}>
-                        {loading ? '⏳ CREATING...' : '⚡ CREATE ACCOUNT'}
+                        {loading ? 'CREATING...' : 'CREATE ACCOUNT'}
                     </button>
                 </form>
 

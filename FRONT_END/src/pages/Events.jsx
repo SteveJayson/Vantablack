@@ -60,7 +60,7 @@ export default function Events({ user, onBack, onEventAction }) {
             const data = await res.json();
 
             if (data.success) {
-                setSuccess(`✅ ${data.message}`);
+                setSuccess(`${data.message}`);
                 if (onEventAction) onEventAction(data.data.newBalance);
                 loadEvents();
                 if (selectedEvent?.id === eventId) loadEventDetails(eventId);
@@ -89,7 +89,7 @@ export default function Events({ user, onBack, onEventAction }) {
 
             if (data.success) {
                 const msgs = data.data.messages.join(' • ');
-                setSuccess(`🎁 ${msgs}`);
+                setSuccess(`${msgs}`);
                 if (onEventAction) onEventAction(data.data.newBalance);
                 loadEvents();
                 loadEventDetails(eventId);
@@ -145,8 +145,8 @@ export default function Events({ user, onBack, onEventAction }) {
         <div style={styles.container}>
             {/* HEADER */}
             <div style={styles.header}>
-                <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                <h1 style={styles.title}>🎪 EVENTS & TOURNAMENTS</h1>
+                <button onClick={onBack} style={styles.backBtn}>Back</button>
+                <h1 style={styles.title}>EVENTS & TOURNAMENTS</h1>
                 <div style={styles.userBadge}>
                     <span>₵{user.credits?.toLocaleString()}</span>
                 </div>
@@ -158,29 +158,29 @@ export default function Events({ user, onBack, onEventAction }) {
                     onClick={() => setActiveTab('active')}
                     style={{ ...styles.tab, ...(activeTab === 'active' ? styles.tabActive : {}) }}
                 >
-                    ⚡ ACTIVE
+                    ACTIVE
                 </button>
                 <button
                     onClick={() => setActiveTab('upcoming')}
                     style={{ ...styles.tab, ...(activeTab === 'upcoming' ? styles.tabActive : {}) }}
                 >
-                    ⏰ UPCOMING
+                    UPCOMING
                 </button>
                 <button
                     onClick={() => setActiveTab('ended')}
                     style={{ ...styles.tab, ...(activeTab === 'ended' ? styles.tabActive : {}) }}
                 >
-                    🏁 ENDED
+                    ENDED
                 </button>
             </div>
 
-            {error && <div style={styles.errorBox}>❌ {error}</div>}
-            {success && <div style={styles.successBox}>✅ {success}</div>}
+            {error && <div style={styles.errorBox}>{error}</div>}
+            {success && <div style={styles.successBox}>{success}</div>}
 
             <div style={styles.grid}>
                 {/* EVENTS LIST */}
                 <div style={styles.panel}>
-                    <h2 style={styles.panelTitle}>📋 {activeTab.toUpperCase()} EVENTS</h2>
+                    <h2 style={styles.panelTitle}>{activeTab.toUpperCase()} EVENTS</h2>
 
                     {loading ? (
                         <div style={styles.loading}>Loading events...</div>
@@ -221,24 +221,24 @@ export default function Events({ user, onBack, onEventAction }) {
                                             )}
                                             {event.currentStatus === 'upcoming' && (
                                                 <div style={styles.startsIn}>
-                                                    🕐 {getStartsIn(event.startDate)}
+                                                    {getStartsIn(event.startDate)}
                                                 </div>
                                             )}
                                             {event.currentStatus === 'ended' && (
-                                                <div style={styles.endedBadge}>🏁 ENDED</div>
+                                                <div style={styles.endedBadge}>ENDED</div>
                                             )}
                                         </div>
                                     </div>
 
                                     <div style={styles.eventMeta}>
-                                        <span>👥 {event.participantCount} joined</span>
-                                        {event.entryFee > 0 && <span>💰 Entry: ₵{event.entryFee}</span>}
-                                        {event.entryFee === 0 && <span style={{ color: '#00ff88' }}>✨ FREE</span>}
+                                        <span>{event.participantCount} joined</span>
+                                        {event.entryFee > 0 && <span>Entry: ₵{event.entryFee}</span>}
+                                        {event.entryFee === 0 && <span style={{ color: '#d1d5db' }}>FREE</span>}
                                     </div>
 
                                     {event.myParticipation && (
                                         <div style={styles.myParticipation}>
-                                            ⭐ You joined! Score: {event.myParticipation.score}
+                                            You joined! Score: {event.myParticipation.score}
                                         </div>
                                     )}
                                 </div>
@@ -249,7 +249,7 @@ export default function Events({ user, onBack, onEventAction }) {
 
                 {/* EVENT DETAILS */}
                 <div style={styles.panel}>
-                    <h2 style={styles.panelTitle}>📖 EVENT DETAILS</h2>
+                    <h2 style={styles.panelTitle}>EVENT DETAILS</h2>
 
                     {!selectedEvent ? (
                         <div style={styles.loading}>Select an event</div>
@@ -297,25 +297,25 @@ export default function Events({ user, onBack, onEventAction }) {
                             <div style={styles.timeInfo}>
                                 {selectedEvent.currentStatus === 'active' && (
                                     <div style={{ color: '#ffaa00' }}>
-                                        ⏰ {getTimeRemaining(selectedEvent.endDate)}
+                                        {getTimeRemaining(selectedEvent.endDate)}
                                     </div>
                                 )}
                                 {selectedEvent.currentStatus === 'upcoming' && (
                                     <div style={{ color: '#00f0ff' }}>
-                                        🕐 {getStartsIn(selectedEvent.startDate)}
+                                        {getStartsIn(selectedEvent.startDate)}
                                     </div>
                                 )}
                             </div>
 
                             {/* Reward pool */}
-                            <h4 style={styles.subTitle}>🎁 REWARD POOL</h4>
+                            <h4 style={styles.subTitle}>REWARD POOL</h4>
                             <div style={styles.rewardPool}>
                                 {Object.entries(selectedEvent.rewardPool).map(([place, reward], i) => (
                                     <div key={i} style={styles.rewardRow}>
                                         <span style={styles.rewardPlace}>{place.replace('_', ' ').toUpperCase()}</span>
                                         <span style={styles.rewardDetails}>
-                                            {reward.credits && `💰 ₵${reward.credits.toLocaleString()}`}
-                                            {reward.gear && ` 🎁`}
+                                            {reward.credits && `₵${reward.credits.toLocaleString()}`}
+                                            {reward.gear && ` GEAR`}
                                         </span>
                                     </div>
                                 ))}
@@ -324,7 +324,7 @@ export default function Events({ user, onBack, onEventAction }) {
                             {/* My participation */}
                             {selectedEvent.myParticipation && (
                                 <div style={styles.myStats}>
-                                    <h4 style={styles.subTitle}>📊 YOUR STATS</h4>
+                                    <h4 style={styles.subTitle}>YOUR STATS</h4>
                                     <div style={styles.myStatsRow}>
                                         <span>Score: <strong>{selectedEvent.myParticipation.score}</strong></span>
                                         {selectedEvent.myParticipation.rank && (
@@ -342,12 +342,12 @@ export default function Events({ user, onBack, onEventAction }) {
                                         disabled={actionLoading}
                                         style={styles.joinBtn}
                                     >
-                                        {actionLoading ? '⏳ JOINING...' : `🎯 JOIN EVENT${selectedEvent.entryFee > 0 ? ` (₵${selectedEvent.entryFee})` : ''}`}
+                                        {actionLoading ? 'JOINING...' : `JOIN EVENT${selectedEvent.entryFee > 0 ? ` (₵${selectedEvent.entryFee})` : ''}` }
                                     </button>
                                 )}
                                 {selectedEvent.currentStatus === 'active' && selectedEvent.myParticipation && (
                                     <div style={styles.joinedMsg}>
-                                        ✅ You're participating! Battle to earn points.
+                                        You're participating! Battle to earn points.
                                     </div>
                                 )}
                                 {selectedEvent.currentStatus === 'ended' &&
@@ -358,24 +358,24 @@ export default function Events({ user, onBack, onEventAction }) {
                                             disabled={actionLoading}
                                             style={styles.claimBtn}
                                         >
-                                            {actionLoading ? '⏳ CLAIMING...' : '🎁 CLAIM REWARDS'}
+                                            {actionLoading ? 'CLAIMING...' : 'CLAIM REWARDS'}
                                         </button>
                                     )}
                                 {selectedEvent.currentStatus === 'ended' &&
                                     selectedEvent.myParticipation?.rewardsClaimed && (
-                                        <div style={styles.claimedMsg}>✅ Rewards claimed!</div>
+                                        <div style={styles.claimedMsg}>Rewards claimed!</div>
                                     )}
                             </div>
 
                             {/* Leaderboard */}
                             {selectedEvent.leaderboard && selectedEvent.leaderboard.length > 0 && (
                                 <>
-                                    <h4 style={styles.subTitle}>🏆 LEADERBOARD</h4>
+                                    <h4 style={styles.subTitle}>LEADERBOARD</h4>
                                     <div style={styles.leaderboard}>
                                         {selectedEvent.leaderboard.slice(0, 10).map((entry, i) => (
                                             <div key={i} style={styles.leaderboardRow}>
                                                 <span style={styles.rankNum}>
-                                                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                                                    {i === 0 ? '1' : i === 1 ? '2' : i === 2 ? '3' : `#${i + 1}`}
                                                 </span>
                                                 <span style={styles.playerName}>{entry.name}</span>
                                                 <span style={styles.playerScore}>{entry.score} pts</span>

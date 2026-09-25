@@ -68,7 +68,7 @@ export default function WeatherWidget() {
     if (error) {
         return (
             <div style={styles.widget}>
-                <div style={styles.error}>❌ {error}</div>
+                <div style={styles.error}> {error}</div>
             </div>
         );
     }
@@ -76,7 +76,7 @@ export default function WeatherWidget() {
     return (
         <div style={styles.widget}>
             <div style={styles.header}>
-                <h3 style={styles.title}>🌍 WEATHER & COMBAT</h3>
+                <h3 style={styles.title}> WEATHER & COMBAT</h3>
                 <input
                     type="text"
                     value={city}
@@ -107,15 +107,15 @@ export default function WeatherWidget() {
 
                         <div style={styles.weatherDetails}>
                             <div style={styles.detail}>
-                                <span>💧 Humidity</span>
+                                <span> Humidity</span>
                                 <span>{weather.humidity}%</span>
                             </div>
                             <div style={styles.detail}>
-                                <span>💨 Wind</span>
+                                <span> Wind</span>
                                 <span>{weather.wind_speed} m/s</span>
                             </div>
                             <div style={styles.detail}>
-                                <span>🌡️ Feels</span>
+                                <span> Feels</span>
                                 <span>{weather.feels_like}°C</span>
                             </div>
                         </div>

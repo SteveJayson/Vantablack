@@ -100,7 +100,7 @@ export default function App() {
         }
       } else {
         if (isManualRetry) {
-          setToast(`⚠️ Backend is offline (${health.error || "Unreachable"})`);
+          setToast(` Backend is offline (${health.error || "Unreachable"})`);
           window.setTimeout(() => setToast(null), 3500);
         }
       }

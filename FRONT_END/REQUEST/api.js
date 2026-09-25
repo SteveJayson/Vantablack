@@ -270,7 +270,7 @@ const getFallbackValidation = (loadout) => ({
     effectiveDrain: 120,
     capacityRemaining: 880
   },
-  warnings: ['✅ LOW RISK: Loadout is well within safe parameters'],
+  warnings: ['LOW RISK: Loadout is well within safe parameters'],
   loadout: loadout
 });
 

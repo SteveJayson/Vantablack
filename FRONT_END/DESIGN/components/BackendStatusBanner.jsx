@@ -140,7 +140,7 @@ export default function BackendStatusBanner({
 
             {showInstructions && (
               <div className="mt-1 rounded-sm border border-slate-700 bg-slate-900/90 p-3 font-data text-[11px] text-slate-300 space-y-2">
-                <p className="text-amber font-semibold">⚡ Quick Start Options:</p>
+                <p className="text-amber font-semibold">Quick Start Options:</p>
                 <div className="space-y-1 pl-2">
                   <p><span className="text-cyan font-bold">Option 1:</span> Run the Windows launcher batch script:</p>
                   <pre className="bg-slate-950 p-2 rounded text-emerald-400 select-all border border-slate-800">
@@ -152,7 +152,7 @@ export default function BackendStatusBanner({
                   </pre>
                 </div>
                 <p className="text-slate-400 text-[10px] pt-1">
-                  💡 Tip: Make sure Apache / MySQL is running in Laragon or XAMPP if database sync is required.
+                  Tip: Make sure Apache / MySQL is running in Laragon or XAMPP if database sync is required.
                 </p>
               </div>
             )}
