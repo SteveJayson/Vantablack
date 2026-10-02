@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import AuthPortal from './pages/AuthPortal';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import Combat from './pages/Combat';
@@ -99,18 +98,13 @@ export default function App() {
         );
     }
 
-    if (screen === 'register') {
-        return <Register onRegister={handleLogin} onShowLogin={() => setScreen('login')} />;
-    }
-
     if (screen === 'forgot') {
         return <ForgotPassword onShowLogin={() => setScreen('login')} />;
     }
 
     return (
-        <Login
+        <AuthPortal
             onLogin={handleLogin}
-            onShowRegister={() => setScreen('register')}
             onShowForgotPassword={() => setScreen('forgot')}
         />
     );
