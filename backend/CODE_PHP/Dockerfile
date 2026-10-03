@@ -19,6 +19,10 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . /var/www/html/
 
+# VERIFY: list files during build (helps debug)
+RUN echo "=== Contents of /var/www/html ===" && ls -la /var/www/html/ && \
+    echo "=== Contents of /var/www/html/public ===" && ls -la /var/www/html/public/
+
 # Install Composer dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
@@ -30,7 +34,7 @@ RUN chown -R www-data:www-data /var/www/html \
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
-# Expose port 80 (Render will override via PORT env)
+# Expose port
 EXPOSE 80
 
 # Run startup script
