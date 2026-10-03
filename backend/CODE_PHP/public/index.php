@@ -7,27 +7,59 @@ use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// Database config
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'aegis_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// ============================================
+// DATABASE CONFIG
+// ============================================
+// On Render, these come from Environment Variables.
+// On local Laragon, these defaults work.
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'aegis_db');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
+define('DB_PORT', getenv('DB_PORT') ?: '3306');
 
 // ============================================
 // 3RD PARTY API KEYS
 // ============================================
-// Get your free API key at: https://openweathermap.org/api
-// Replace the placeholder below with your actual key
-define('OPENWEATHER_API_KEY', 'ec74178dbcb33f3ebd64f1f7db7ee90e');
+define('OPENWEATHER_API_KEY', getenv('OPENWEATHER_API_KEY') ?: 'ec74178dbcb33f3ebd64f1f7db7ee90e');
 
 $app = AppFactory::create();
 
+// ============================================
+// CORS MIDDLEWARE
+// ============================================
 $app->add(function ($request, $handler) {
     $response = $handler->handle($request);
+    
+    // Allowed origins — add your Render frontend URL after deploying it
+    $allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173',
+        // Add your Render frontend URL here after deploying:
+        // 'https://vantablack-frontend.onrender.com',
+    ];
+    
+    // Also allow origins from env var (comma-separated)
+    $envOrigins = getenv('ALLOWED_ORIGINS');
+    if ($envOrigins) {
+        $allowedOrigins = array_merge($allowedOrigins, explode(',', $envOrigins));
+    }
+    
+    $origin = $request->getHeaderLine('Origin');
+    
+    // If origin matches allowed list, echo it back. Otherwise allow *.
+    if ($origin && in_array($origin, $allowedOrigins)) {
+        $allowOrigin = $origin;
+    } else {
+        $allowOrigin = '*';
+    }
+    
     return $response
-        ->withHeader('Access-Control-Allow-Origin', '*')
+        ->withHeader('Access-Control-Allow-Origin', $allowOrigin)
         ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+        ->withHeader('Access-Control-Allow-Credentials', 'true')
         ->withHeader('Content-Type', 'application/json');
 });
 
@@ -95,7 +127,7 @@ $app->get('/api/missions', \Aegis\Controllers\MissionController::class . ':getMi
 $app->get('/api/missions/{id}', \Aegis\Controllers\MissionController::class . ':getMission');
 
 // ============================================
-// COMBAT ROUTES (Feature #1)
+// COMBAT ROUTES
 // ============================================
 $app->get('/api/combat/opponents', \Aegis\Controllers\CombatController::class . ':getOpponents');
 $app->post('/api/combat/simulate', \Aegis\Controllers\CombatController::class . ':simulate');
@@ -177,7 +209,6 @@ $app->get('/api/replays/{id}', \Aegis\Controllers\ReplayController::class . ':ge
 $app->delete('/api/replays/{id}', \Aegis\Controllers\ReplayController::class . ':deleteReplay');
 $app->post('/api/replays/toggle-visibility/{id}', \Aegis\Controllers\ReplayController::class . ':toggleVisibility');
 
-
 // ============================================
 // ADMIN
 // ============================================
@@ -209,7 +240,7 @@ $app->map(['GET', 'POST'], '/api/external/generate-bot', \Aegis\Controllers\Exte
 $app->map(['GET', 'POST'], '/api/external/generate-bots', \Aegis\Controllers\ExternalApiController::class . ':generateBots');
 
 // ============================================
-// HEALTH
+// HEALTH CHECK
 // ============================================
 $app->get('/api/health', function ($request, $response, $args) {
     $apiKey = defined('OPENWEATHER_API_KEY') ? OPENWEATHER_API_KEY : '';
@@ -222,6 +253,13 @@ $app->get('/api/health', function ($request, $response, $args) {
         'data' => [
             'version' => '5.0.0',
             'timestamp' => date('Y-m-d H:i:s'),
+            'environment' => getenv('APP_ENV') ?: 'production',
+            'database' => [
+                'host' => DB_HOST,
+                'port' => DB_PORT,
+                'name' => DB_NAME,
+                'connected' => true
+            ],
             'features' => [
                 'auth' => true,
                 'analytics' => true,
@@ -238,7 +276,9 @@ $app->get('/api/health', function ($request, $response, $args) {
     return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
 });
 
-// 404
+// ============================================
+// 404 HANDLER (must be last)
+// ============================================
 $app->map(['GET', 'POST', 'PUT', 'DELETE'], '/{routes:.+}', function ($request, $response, $args) {
     $payload = [
         'status' => 404,

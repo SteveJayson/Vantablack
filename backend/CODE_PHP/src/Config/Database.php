@@ -14,20 +14,23 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$instance === null) {
-            $host = defined('DB_HOST') ? DB_HOST : 'localhost';
-            $dbname = defined('DB_NAME') ? DB_NAME : 'aegis_db';
-            $username = defined('DB_USER') ? DB_USER : 'root';
-            $password = defined('DB_PASS') ? DB_PASS : '';
+            // Read from environment variables (set on Render + Aiven)
+            $host = getenv('DB_HOST') ?: 'localhost';
+            $dbname = getenv('DB_NAME') ?: 'aegis_db';
+            $username = getenv('DB_USER') ?: 'root';
+            $password = getenv('DB_PASS') ?: '';
+            $port = getenv('DB_PORT') ?: '3306';
             
             try {
                 self::$instance = new PDO(
-                    "mysql:host={$host};dbname={$dbname};charset=utf8mb4",
+                    "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4",
                     $username,
                     $password,
                     [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::ATTR_EMULATE_PREPARES => false
+                        PDO::ATTR_EMULATE_PREPARES => false,
+                        PDO::MYSQL_ATTR_SSL_CA => false,
                     ]
                 );
             } catch (PDOException $e) {
