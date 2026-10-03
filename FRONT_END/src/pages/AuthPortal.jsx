@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
@@ -345,7 +346,11 @@ function LoginForm({
                     style={styles.eyeButton}
                     aria-label="Toggle password visibility"
                 >
-                    {loginShowPassword ? '' : ''}
+                    {loginShowPassword ? (
+                        <EyeOff size={18} strokeWidth={2} color="rgba(238,240,247,0.9)" />
+                    ) : (
+                        <Eye size={18} strokeWidth={2} color="rgba(238,240,247,0.9)" />
+                    )}
                 </button>
             </div>
 
@@ -427,7 +432,11 @@ function RegisterForm({
                     style={styles.eyeButton}
                     aria-label="Toggle password visibility"
                 >
-                    {regShowPassword ? '' : ''}
+                    {regShowPassword ? (
+                        <EyeOff size={18} strokeWidth={2} color="rgba(238,240,247,0.9)" />
+                    ) : (
+                        <Eye size={18} strokeWidth={2} color="rgba(238,240,247,0.9)" />
+                    )}
                 </button>
             </div>
 
@@ -449,7 +458,11 @@ function RegisterForm({
                     style={styles.eyeButton}
                     aria-label="Toggle confirm password visibility"
                 >
-                    {regShowConfirm ? '' : ''}
+                    {regShowConfirm ? (
+                        <EyeOff size={18} strokeWidth={2} color="rgba(238,240,247,0.9)" />
+                    ) : (
+                        <Eye size={18} strokeWidth={2} color="rgba(238,240,247,0.9)" />
+                    )}
                 </button>
             </div>
 
@@ -568,6 +581,16 @@ function GlobalStyle() {
             }
 
             /* ---- Interactive states ---- */
+            input[type="password"]::-ms-reveal,
+            input[type="password"]::-ms-clear,
+            input[type="password"]::-webkit-credentials-auto-fill-button,
+            input[type="password"]::-webkit-strong-password-auto-fill-button {
+                display: none !important;
+                -webkit-appearance: none !important;
+                appearance: none !important;
+                pointer-events: none;
+            }
+
             .vb-input:focus {
                 outline: none;
                 border-color: ${COLORS.gradientStart} !important;
@@ -594,8 +617,8 @@ function GlobalStyle() {
                 transform: translateY(-2px);
             }
             .vb-eye-btn {
-                transition: opacity 0.2s ease;
-                opacity: 0.6;
+                transition: opacity 1s ease;
+                opacity: 1;
             }
             .vb-eye-btn:hover {
                 opacity: 1;
