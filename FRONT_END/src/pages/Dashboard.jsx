@@ -6,7 +6,7 @@ import ChatWidget from '../components/ChatWidget';
 import NotificationBell from '../components/NotificationBell';
 import AdminCharts from '../components/AdminCharts';
 
-const API = 'http://localhost:8080/api';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 export default function Dashboard({ user: initialUser, onLogout, onShowCombat, onShowCrafting, onShowFactions, onShowEvents, onShowLeaderboards, onShowReplays }) {
     const [user, setUser] = useState(initialUser);

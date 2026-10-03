@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API = 'http://localhost:8080/api';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 export default function Leaderboards({ user, onBack }) {
     const [activeTab, setActiveTab] = useState('global');

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 
-const API = 'http://localhost:8080/api';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 // ----------------------------------------------------------------
 // Design tokens — sampled from the reference video.

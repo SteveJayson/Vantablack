@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const API = 'http://localhost:8080/api';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 export default function ForgotPassword({ onShowLogin }) {
     const [step, setStep] = useState(1); // 1 = enter username, 2 = reset password
