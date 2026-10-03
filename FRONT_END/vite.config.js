@@ -6,6 +6,11 @@ export default defineConfig({
     server: {
         port: 5173,
         host: 'localhost',
-        open: false
+        open: false,
+        cors: true
+    },
+    build: {
+        outDir: 'dist',
+        sourcemap: false
     }
 });
