@@ -312,7 +312,6 @@ function LoginForm({
             <p style={styles.brandLabel}>⚡ VANTABLACK</p> 
             
             
-
             {loginError && <div style={styles.errorBox}>{loginError}</div>}
 
             <div style={styles.inputGroup}>
