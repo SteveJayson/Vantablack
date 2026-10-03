@@ -7,6 +7,39 @@ use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
+$allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'https://vantablack-frontend.onrender.com',
+];
+
+$envOrigins = getenv('ALLOWED_ORIGINS');
+if ($envOrigins) {
+    $allowedOrigins = array_merge($allowedOrigins, explode(',', $envOrigins));
+}
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$origin = trim($origin);
+
+if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} elseif ($origin !== '') {
+    header('Access-Control-Allow-Origin: *');
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-API-Key, X-Request-Id, Idempotency-Key');
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Max-Age: 86400');
+header('Vary: Origin');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 // ============================================
 // DATABASE CONFIG
 // ============================================

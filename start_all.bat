@@ -13,13 +13,19 @@ echo.
 :: ============================================
 set "BACKEND_PATH=%~dp0backend\CODE_PHP"
 set "FRONTEND_PATH=%~dp0FRONT_END"
+set "MYSQL_BIN="
+if exist "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" (
+    set "MYSQL_BIN=C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe"
+) else (
+    where mysql >nul 2>nul
+    if not errorlevel 1 set "MYSQL_BIN=mysql"
+)
 
 :: ============================================
 :: CHECK 1: MYSQL IS RUNNING
 :: ============================================
 echo [1/4] Checking MySQL connection...
-where mysql >nul 2>nul
-if %errorlevel% neq 0 (
+if "%MYSQL_BIN%"=="" (
     echo.
     echo   [WARNING] MySQL client not found in PATH
     echo   [INFO] Make sure MySQL is running in Laragon
@@ -27,7 +33,7 @@ if %errorlevel% neq 0 (
     goto :CHECK_PATHS
 )
 
-mysql -u root -e "SELECT 1" >nul 2>nul
+"%MYSQL_BIN%" -u root -e "SELECT 1" >nul 2>nul
 if %errorlevel% neq 0 (
     echo.
     echo   [ERROR] Cannot connect to MySQL!
@@ -44,18 +50,18 @@ if %errorlevel% neq 0 (
 :: ============================================
 echo.
 echo [2/4] Checking database 'aegis_db'...
-mysql -u root -e "USE aegis_db" >nul 2>nul
-if %errorlevel% neq 0 (
-    echo.
-    echo   [WARNING] Database 'aegis_db' not found!
-    echo   [INFO] Attempting to create and import schema...
-    echo.
+"%MYSQL_BIN%" -u root -e "USE aegis_db" >nul 2>nul
+    if %errorlevel% neq 0 (
+        echo.
+        echo   [WARNING] Database 'aegis_db' not found!
+        echo   [INFO] Attempting to create and import schema...
+        echo.
     
-    mysql -u root -e "CREATE DATABASE IF NOT EXISTS aegis_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+        "%MYSQL_BIN%" -u root -e "CREATE DATABASE IF NOT EXISTS aegis_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     
-    if exist "%~dp0backend\QUERY\schema_and_seed.sql" (
-        echo   [INFO] Importing schema_and_seed.sql...
-        mysql -u root aegis_db < "%~dp0backend\QUERY\schema_and_seed.sql"
+        if exist "%~dp0backend\QUERY\schema_and_seed.sql" (
+            echo   [INFO] Importing schema_and_seed.sql...
+            "%MYSQL_BIN%" -u root aegis_db < "%~dp0backend\QUERY\schema_and_seed.sql"
         if !errorlevel! equ 0 (
             echo   [OK] Database created and imported
         ) else (

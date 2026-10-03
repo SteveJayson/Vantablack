@@ -7,6 +7,14 @@ echo    VANTABLACK BACKEND SERVER
 echo ========================================
 echo.
 
+set "MYSQL_BIN="
+if exist "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" (
+    set "MYSQL_BIN=C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe"
+) else (
+    where mysql >nul 2>nul
+    if not errorlevel 1 set "MYSQL_BIN=mysql"
+)
+
 :: Check if PHP is installed
 where php >nul 2>nul
 if %errorlevel% neq 0 (
@@ -40,13 +48,19 @@ if not exist "CODE_PHP\.env" (
 
 :: Check if database exists
 echo [INFO] Checking database connection...
-mysql -u root -e "USE aegis_db" >nul 2>nul
+if "%MYSQL_BIN%"=="" (
+    echo [ERROR] MySQL client not found. Please start Laragon or add MySQL to PATH.
+    pause
+    exit /b 1
+)
+
+"%MYSQL_BIN%" -u root -e "USE aegis_db" >nul 2>nul
 if %errorlevel% neq 0 (
     echo [WARNING] Database 'aegis_db' not found!
     echo [INFO] Creating database...
-    mysql -u root -e "CREATE DATABASE aegis_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    "%MYSQL_BIN%" -u root -e "CREATE DATABASE aegis_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     echo [INFO] Importing schema...
-    mysql -u root aegis_db < QUERY\schema_and_seed.sql
+    "%MYSQL_BIN%" -u root aegis_db < QUERY\schema_and_seed.sql
     echo.
 )
 

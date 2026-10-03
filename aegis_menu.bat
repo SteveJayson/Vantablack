@@ -19,6 +19,14 @@ echo.
 echo ========================================
 set /p choice="Select an option (1-6): "
 
+set "MYSQL_BIN="
+if exist "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" (
+    set "MYSQL_BIN=C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe"
+) else (
+    where mysql >nul 2>nul
+    if not errorlevel 1 set "MYSQL_BIN=mysql"
+)
+
 if "%choice%"=="1" goto BACKEND
 if "%choice%"=="2" goto FRONTEND
 if "%choice%"=="3" goto BOTH
@@ -68,9 +76,15 @@ echo ========================================
 echo    IMPORTING DATABASE SCHEMA
 echo ========================================
 echo.
-mysql -u root -e "DROP DATABASE IF EXISTS aegis_db;"
-mysql -u root -e "CREATE DATABASE aegis_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root aegis_db < backend\QUERY\schema_and_seed.sql
+if "%MYSQL_BIN%"=="" (
+    echo MySQL client not found. Start Laragon or add MySQL to PATH.
+    pause
+    goto MENU
+)
+
+"%MYSQL_BIN%" -u root -e "DROP DATABASE IF EXISTS aegis_db;"
+"%MYSQL_BIN%" -u root -e "CREATE DATABASE aegis_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+"%MYSQL_BIN%" -u root aegis_db < backend\QUERY\schema_and_seed.sql
 echo.
 echo Database import complete!
 pause
