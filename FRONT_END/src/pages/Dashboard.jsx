@@ -186,10 +186,20 @@ export default function Dashboard({
       const data = await res.json();
       setInventory(data.data?.inventory || []);
     } else {
-      const res = await fetch(`${API}/gear`);
-      const data = await res.json();
-      let items = data.data?.catalog || [];
-      items = items.filter((i) => i.source === tab);
+      const [catalogRes, inventoryRes] = await Promise.all([
+        fetch(`${API}/gear`),
+        fetch(`${API}/marketplace/inventory/${user.id}`),
+      ]);
+      const [catalogData, inventoryData] = await Promise.all([
+        catalogRes.json(),
+        inventoryRes.json(),
+      ]);
+      const ownedInventory = inventoryData.data?.inventory || [];
+      const ownedGearIds = new Set(ownedInventory.map((item) => item.gearId));
+      const items = (catalogData.data?.catalog || []).filter(
+        (item) => item.source === tab && !ownedGearIds.has(item.id),
+      );
+      setInventory(ownedInventory);
       setCatalog(items);
     }
   };
@@ -1201,7 +1211,7 @@ export default function Dashboard({
                     ))
                   )
                 ) : catalog.length === 0 ? (
-                  <p style={styles.emptyMsg}>Loading gear...</p>
+                  <p style={styles.emptyMsg}>No unowned gear available in this market</p>
                 ) : (
                   catalog.map((item) => (
                     <GearCard
