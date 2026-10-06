@@ -205,6 +205,11 @@ export default function Dashboard({
   };
 
   const purchase = async (gearId) => {
+    if (tab === "black-market" && role !== "villain") {
+      showAlert("error", "Only villains can buy from the black market.");
+      return;
+    }
+
     const res = await fetch(`${API}/marketplace/purchase`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -270,7 +275,8 @@ export default function Dashboard({
     setTimeout(() => setAlert(null), 4000);
   };
 
-  const canBuy = role !== "admin";
+  const isBlackMarketTab = tab === "black-market";
+  const canBuy = role !== "admin" && (!isBlackMarketTab || role === "villain");
   const canSell = role === "hero" || role === "villain";
 
   return (
@@ -1170,9 +1176,8 @@ export default function Dashboard({
                                 onClick={() => equipItem(item.inventoryId)}
                                 style={{
                                   ...styles.actionBtn,
-                                  background:
-                                    "linear-gradient(90deg, #00ff88, #00f0ff)",
-                                  color: "#0a0a1a",
+                                  background: "#22c55e",
+                                  color: "#ffffff",
                                 }}
                               >
                                 EQUIP
@@ -1183,9 +1188,8 @@ export default function Dashboard({
                                 onClick={() => sell(item.inventoryId)}
                                 style={{
                                   ...styles.actionBtn,
-                                  background:
-                                    "linear-gradient(90deg, #ff0044, #ff00ff)",
-                                  color: "white",
+                                  background: "#dc2626",
+                                  color: "#ffffff",
                                 }}
                               >
                               SELL
@@ -1203,10 +1207,16 @@ export default function Dashboard({
                     <GearCard
                       key={item.id}
                       item={item}
-                      actionLabel={canBuy ? "BUY" : "ADMIN CANNOT BUY"}
+                      actionLabel={
+                        canBuy
+                          ? "BUY"
+                          : isBlackMarketTab
+                            ? "VILLAINS ONLY"
+                            : "ADMIN CANNOT BUY"
+                      }
                       onAction={() => purchase(item.id)}
                       disabled={!canBuy}
-                      actionColor="#00f0ff"
+                      actionColor="#22c55e"
                     />
                   ))
                 )}
@@ -1258,6 +1268,7 @@ function GearCard({ item, actionLabel, onAction, disabled, actionColor }) {
           style={{
             ...styles.actionBtn,
             background: disabled ? "#666" : actionColor,
+            color: "#ffffff",
           }}
         >
           {actionLabel}

@@ -67,14 +67,7 @@ class MarketplaceController
                 return $this->jsonResponse($response, 404, false, 'Gear not found');
             }
             
-            // Check ownership
-            $stmt = $this->db->prepare("SELECT id FROM inventory WHERE combatant_id = ? AND gear_id = ?");
-            $stmt->execute([$combatantId, $gearId]);
-            if ($stmt->fetch()) {
-                $this->db->rollBack();
-                return $this->jsonResponse($response, 400, false, 'Already owned');
-            }
-            
+            // Allow duplicate purchases for crafting/material gathering
             // Check clearance
             if ($combatant['clearanceLevel'] < $gear['clearanceRequired']) {
                 $this->db->rollBack();
@@ -257,7 +250,7 @@ try {
         }
     }
     
-    private function logTransaction(array $combatant, string $type, array $gear, string $status, int $balanceAfter, int $balanceBefore, int $customAmount = null): void
+    private function logTransaction(array $combatant, string $type, array $gear, string $status, int $balanceAfter, int $balanceBefore, ?int $customAmount = null): void
     {
         try {
             $amount = $customAmount ?? ($gear['price'] ?? 0);

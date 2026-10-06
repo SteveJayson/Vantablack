@@ -578,7 +578,6 @@ CREATE TABLE `inventory` (
   `equipped` tinyint(1) DEFAULT '0',
   `acquired_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_inventory_item` (`combatant_id`,`gear_id`),
   KEY `gear_id` (`gear_id`),
   KEY `idx_inventory_combatant` (`combatant_id`),
   KEY `idx_inventory_equipped` (`equipped`),
