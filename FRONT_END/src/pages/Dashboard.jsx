@@ -905,10 +905,10 @@ export default function Dashboard({
                       Generate 3 Villains
                     </button>
                   </div>
-                  {/* 💰 GRANT CREDITS TO USER */}
+                  {/* GRANT CREDITS TO USER */}
                   <div style={{ marginTop: "30px" }}>
                     <h3 style={styles.sectionTitle}>
-                      💰 GRANT CREDITS TO USER
+                       GRANT CREDITS TO USER
                     </h3>
 
                     {grantMessage && (
@@ -1052,14 +1052,14 @@ export default function Dashboard({
                         opacity: grantLoading ? 0.6 : 1,
                       }}
                     >
-                      {grantLoading ? "⏳ GRANTING..." : "💰 GRANT CREDITS"}
+                      {grantLoading ? "GRANTING..." : "GRANT CREDITS"}
                     </button>
                   </div>
 
-                  {/* 📜 GRANT HISTORY */}
+                  {/* GRANT HISTORY */}
                   {grantHistory.length > 0 && (
                     <div style={{ marginTop: "30px" }}>
-                      <h3 style={styles.sectionTitle}>📜 RECENT GRANTS</h3>
+                      <h3 style={styles.sectionTitle}>RECENT GRANTS</h3>
                       <table style={styles.dataTable}>
                         <thead>
                           <tr>
@@ -1142,9 +1142,9 @@ export default function Dashboard({
                           {item.source?.toUpperCase()}
                         </div>
                         <div style={styles.gearStats}>
-                          <span>⚡ {item.bioCapacity}</span>
-                          <span>🔄 {item.recoveryRate}</span>
-                          <span>⚠️ {item.riskModifier}</span>
+                          <span>{item.bioCapacity}</span>
+                          <span>{item.recoveryRate}</span>
+                          <span>{item.riskModifier}</span>
                         </div>
                         <div style={styles.gearPrice}>
                           <span
@@ -1163,7 +1163,7 @@ export default function Dashboard({
                                   border: "1px solid #ffaa00",
                                 }}
                               >
-                                ⬇️ UNEQUIP
+                                UNEQUIP
                               </button>
                             ) : (
                               <button
@@ -1175,7 +1175,7 @@ export default function Dashboard({
                                   color: "#0a0a1a",
                                 }}
                               >
-                                ⬆️ EQUIP
+                                EQUIP
                               </button>
                             )}
                             {canSell && (
@@ -1188,7 +1188,7 @@ export default function Dashboard({
                                   color: "white",
                                 }}
                               >
-                                💰 SELL
+                              SELL
                               </button>
                             )}
                           </div>
