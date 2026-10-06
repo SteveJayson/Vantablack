@@ -10,8 +10,8 @@ class WeatherService
     
     public function __construct()
     {
-        $this->apiKey = defined('OPENWEATHER_API_KEY') ? OPENWEATHER_API_KEY : '';
-        $this->baseUrl = defined('OPENWEATHER_BASE_URL') ? OPENWEATHER_BASE_URL : 'https://api.openweathermap.org/data/2.5';
+        $this->apiKey = \defined('OPENWEATHER_API_KEY') ? \OPENWEATHER_API_KEY : '';
+        $this->baseUrl = \defined('OPENWEATHER_BASE_URL') ? \OPENWEATHER_BASE_URL : 'https://api.openweathermap.org/data/2.5';
         $this->cacheDir = __DIR__ . '/../../cache/weather';
         
         if (!is_dir($this->cacheDir)) {

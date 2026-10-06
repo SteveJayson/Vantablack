@@ -16,7 +16,7 @@ if [ ! -f /var/www/html/public/index.php ]; then
     exit 1
 fi
 
-echo "Found public/index.php ✓"
+echo "Found public/index.php"
 
 # Rewrite ports.conf completely (avoid sed issues)
 cat > /etc/apache2/ports.conf << EOF

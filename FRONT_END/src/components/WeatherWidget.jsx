@@ -2,32 +2,51 @@ import { useState, useEffect } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
-export default function WeatherWidget() {
+export default function WeatherWidget({ user }) {
     const [weather, setWeather] = useState(null);
     const [forecast, setForecast] = useState(null);
     const [city, setCity] = useState('Manila');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const combatantId = user?.id ?? JSON.parse(localStorage.getItem('aegis_user') || 'null')?.id ?? null;
+
     useEffect(() => {
         loadWeather();
-    }, [city]);
+    }, [city, combatantId]);
 
     const loadWeather = async () => {
         setLoading(true);
         setError('');
 
         try {
+            const currentUrl = combatantId
+                ? `${API}/weather/combat-impact`
+                : `${API}/weather/current?city=${encodeURIComponent(city)}`;
+
+            const forecastUrl = combatantId
+                ? `${API}/weather/combat-forecast?city=${encodeURIComponent(city)}&combatantId=${combatantId}`
+                : `${API}/weather/combat-forecast?city=${encodeURIComponent(city)}`;
+
             const [currentRes, forecastRes] = await Promise.all([
-                fetch(`${API}/weather/current?city=${city}`),
-                fetch(`${API}/weather/combat-forecast?city=${city}`)
+                combatantId
+                    ? fetch(currentUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ city, combatantId })
+                    })
+                    : fetch(currentUrl),
+                fetch(forecastUrl)
             ]);
 
             const currentData = await currentRes.json();
             const forecastData = await forecastRes.json();
 
             if (currentData.success) {
-                setWeather(currentData.data);
+                const payload = currentData.data.impact
+                    ? { ...currentData.data.weather, ...currentData.data.impact }
+                    : currentData.data;
+                setWeather(payload);
             } else {
                 setError(currentData.message);
             }

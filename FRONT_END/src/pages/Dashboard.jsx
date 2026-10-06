@@ -87,15 +87,15 @@ export default function Dashboard({
       const data = await res.json();
 
       if (data.success) {
-        showAlert("success", `✅ ${data.message}`);
+        showAlert("success", data.message);
         // Refresh user + loadout
         await syncUser();
         await loadData();
       } else {
-        showAlert("error", `❌ ${data.message}`);
+        showAlert("error", data.message);
       }
     } catch (error) {
-      showAlert("error", `❌ Error: ${error.message}`);
+      showAlert("error", `Error: ${error.message}`);
     }
   };
 
@@ -112,14 +112,14 @@ export default function Dashboard({
       const data = await res.json();
 
       if (data.success) {
-        showAlert("success", `✅ ${data.message}`);
+        showAlert("success", data.message);
         await syncUser();
         await loadData();
       } else {
-        showAlert("error", `❌ ${data.message}`);
+        showAlert("error", data.message);
       }
     } catch (error) {
-      showAlert("error", `❌ Error: ${error.message}`);
+      showAlert("error", `Error: ${error.message}`);
     }
   };
 
@@ -146,17 +146,17 @@ export default function Dashboard({
       const data = await res.json();
 
       if (data.success) {
-        setGrantMessage(`✅ ${data.message}`);
+        setGrantMessage(data.message);
         setGrantUsername("");
         setGrantAmount("");
         setGrantReason("");
         // Reload history
         loadGrantHistory();
       } else {
-        setGrantMessage(`❌ ${data.message}`);
+        setGrantMessage(data.message);
       }
     } catch (error) {
-      setGrantMessage(`❌ Error: ${error.message}`);
+      setGrantMessage(`Error: ${error.message}`);
     } finally {
       setGrantLoading(false);
     }
@@ -449,7 +449,7 @@ export default function Dashboard({
           {/* Weather Widget */}
           {showWeather && (
             <div style={styles.panel}>
-              <WeatherWidget />
+              <WeatherWidget user={user} />
             </div>
           )}
 
@@ -922,11 +922,11 @@ export default function Dashboard({
                         style={{
                           padding: "10px",
                           marginBottom: "15px",
-                          background: grantMessage.startsWith("✅")
+                          background: grantMessage.toLowerCase().includes("success") || grantMessage.toLowerCase().includes("granted") || grantMessage.toLowerCase().includes("complete")
                             ? "rgba(0,255,136,0.1)"
                             : "rgba(255,0,68,0.1)",
-                          border: `1px solid ${grantMessage.startsWith("✅") ? "#00ff88" : "#ff0044"}`,
-                          color: grantMessage.startsWith("✅")
+                          border: `1px solid ${grantMessage.toLowerCase().includes("success") || grantMessage.toLowerCase().includes("granted") || grantMessage.toLowerCase().includes("complete") ? "#00ff88" : "#ff0044"}`,
+                          color: grantMessage.toLowerCase().includes("success") || grantMessage.toLowerCase().includes("granted") || grantMessage.toLowerCase().includes("complete")
                             ? "#00ff88"
                             : "#ff0044",
                           borderRadius: "8px",
@@ -1139,7 +1139,7 @@ export default function Dashboard({
                             <span
                               style={{ color: "#00ff88", marginLeft: "8px" }}
                             >
-                              ✅ EQUIPPED
+                              EQUIPPED
                             </span>
                           )}
                         </div>

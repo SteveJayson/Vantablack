@@ -5,4 +5,8 @@ SHOW INDEX FROM inventory WHERE Key_name = 'unique_inventory_item';
 ALTER TABLE inventory DROP INDEX unique_inventory_item;
 
 -- Optional sanity check:
-SELECT * FROM inventory WHERE combatant_id IS NOT NULL LIMIT 10;
+SELECT combatant_id, gear_id, COUNT(*) AS duplicates
+FROM inventory
+GROUP BY combatant_id, gear_id
+HAVING COUNT(*) > 1
+LIMIT 20;

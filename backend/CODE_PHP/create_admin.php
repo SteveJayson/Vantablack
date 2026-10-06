@@ -31,7 +31,7 @@ try {
             VALUES ('System Admin', 0, 0, 0, 999999, 'hero', 'admin', 5)
         ");
         $combatantId = $pdo->lastInsertId();
-        echo "✅ Created admin combatant (ID: $combatantId)\n";
+        echo "Created admin combatant (ID: $combatantId)\n";
     } else {
         $combatantId = $admin['id'];
         echo "ℹ️  Admin combatant exists (ID: $combatantId)\n";
@@ -51,7 +51,7 @@ try {
         ");
         $stmt->execute([$hash, $combatantId]);
         
-        echo "✅ Created admin user\n";
+        echo "Created admin user\n";
         echo "   ─────────────────────\n";
         echo "   Username: admin\n";
         echo "   Password: admin123\n";
@@ -61,7 +61,7 @@ try {
     }
     
     echo "\n========================================\n";
-    echo "  ✅ ADMIN SETUP COMPLETE!\n";
+    echo "  ADMIN SETUP COMPLETE!\n";
     echo "========================================\n";
     echo "\nYou can now login as admin:\n";
     echo "  URL: http://localhost:5173\n";
@@ -69,5 +69,5 @@ try {
     echo "  Password: admin123\n\n";
     
 } catch (PDOException $e) {
-    echo "❌ Error: " . $e->getMessage() . "\n";
+    echo "Error: " . $e->getMessage() . "\n";
 }

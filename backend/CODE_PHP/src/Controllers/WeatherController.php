@@ -14,7 +14,7 @@ class WeatherController
     public function __construct()
     {
         $this->db = Database::getConnection();
-        $this->apiKey = defined('OPENWEATHER_API_KEY') ? OPENWEATHER_API_KEY : '';
+        $this->apiKey = \defined('OPENWEATHER_API_KEY') ? \OPENWEATHER_API_KEY : '';
         $this->baseUrl = 'https://api.openweathermap.org/data/2.5';
     }
     
@@ -169,6 +169,7 @@ class WeatherController
             
             $city = $body['city'] ?? 'Manila';
             $combatantId = $body['combatantId'] ?? null;
+            $loadoutImpact = $combatantId ? $this->getLoadoutImpact((int)$combatantId) : ['bio_capacity' => 0, 'recovery_rate' => 0, 'risk_modifier' => 0];
             
             // Get weather
             $weather = null;
@@ -198,12 +199,13 @@ class WeatherController
                 return $this->jsonResponse($response, 500, false, 'Could not fetch weather');
             }
             
-            // Calculate combat impact
-            $impact = $this->calculateCombatImpact($weather);
+            // Calculate combat impact with equipped gear influence
+            $impact = $this->calculateCombatImpact($weather, $loadoutImpact);
             
             return $this->jsonResponse($response, 200, true, 'Combat impact calculated', [
                 'city' => $city,
                 'weather' => $weather,
+                'equipment' => $loadoutImpact,
                 'impact' => $impact
             ]);
             
@@ -220,6 +222,8 @@ class WeatherController
     {
         try {
             $city = $this->getQuery($request, 'city', 'Manila');
+            $combatantId = $this->getQuery($request, 'combatantId', null);
+            $loadoutImpact = $combatantId ? $this->getLoadoutImpact((int)$combatantId) : ['bio_capacity' => 0, 'recovery_rate' => 0, 'risk_modifier' => 0];
             
             // Get forecast
             if (empty($this->apiKey) || $this->apiKey === 'YOUR_API_KEY_HERE') {
@@ -263,11 +267,12 @@ class WeatherController
                     'condition' => $day['condition'],
                     'humidity' => 70,
                     'wind_speed' => 5
-                ]);
+                ], $loadoutImpact);
             }
             
             return $this->jsonResponse($response, 200, true, 'Combat forecast retrieved', [
                 'city' => $city,
+                'equipment' => $loadoutImpact,
                 'forecast' => $forecast
             ]);
             
@@ -279,10 +284,13 @@ class WeatherController
     /**
      * Calculate how weather affects combat
      */
-    private function calculateCombatImpact(array $weather): array
+    private function calculateCombatImpact(array $weather, array $equipment = []): array
     {
         $condition = $weather['condition'] ?? 'Clear';
         $temp = $weather['temperature'] ?? 25;
+        $bioCapacity = (int)($equipment['bio_capacity'] ?? 0);
+        $recoveryRate = (int)($equipment['recovery_rate'] ?? 0);
+        $riskModifier = (int)($equipment['risk_modifier'] ?? 0);
         
         // Base impacts by condition
         $impacts = [
@@ -364,16 +372,23 @@ class WeatherController
         } elseif ($temp < 10) {
             $tempModifier = 10;
         }
+
+        // Gear modifies survivability and strain.
+        // Risky gear increases strain, while recovery/bio capacity reduce it.
+        $gearAdjustment = ($riskModifier * 1.2) - ($recoveryRate * 0.35) - ($bioCapacity * 0.08);
+        $bioDrainModifier = $baseImpact['bio_drain_modifier'] + $tempModifier + round($gearAdjustment);
+        $riskModifierFinal = $baseImpact['risk_modifier'] + $tempModifier + max(0, $riskModifier);
         
         return [
             'condition' => $condition,
             'temperature' => $temp,
-            'bio_drain_modifier' => $baseImpact['bio_drain_modifier'] + $tempModifier,
+            'bio_drain_modifier' => $bioDrainModifier,
             'visibility' => max(0, $baseImpact['visibility']),
             'mobility' => max(0, $baseImpact['mobility']),
-            'risk_modifier' => $baseImpact['risk_modifier'] + $tempModifier,
+            'risk_modifier' => $riskModifierFinal,
             'description' => $baseImpact['description'],
-            'combat_rating' => $this->getCombatRating($baseImpact['bio_drain_modifier'] + $tempModifier)
+            'equipment_adjustment' => round($gearAdjustment, 2),
+            'combat_rating' => $this->getCombatRating($bioDrainModifier)
         ];
     }
     
@@ -392,6 +407,41 @@ class WeatherController
         } else {
             return ['rating' => 'S', 'label' => '💚 OPTIMAL', 'color' => '#00ff88'];
         }
+    }
+    
+    private function getLoadoutImpact(int $combatantId): array
+    {
+        $stmt = $this->db->prepare("SELECT helmet_id, core_id, dampener_id, gauntlets_id, battery_id FROM loadouts WHERE combatant_id = ?");
+        $stmt->execute([$combatantId]);
+        $loadout = $stmt->fetch();
+
+        if (!$loadout) {
+            return ['bio_capacity' => 0, 'recovery_rate' => 0, 'risk_modifier' => 0];
+        }
+
+        $slots = ['helmet', 'core', 'dampener', 'gauntlets', 'battery'];
+        $totals = ['bio_capacity' => 0, 'recovery_rate' => 0, 'risk_modifier' => 0];
+
+        foreach ($slots as $slot) {
+            $gearId = $loadout[$slot . '_id'] ?? null;
+            if (!$gearId) {
+                continue;
+            }
+
+            $gearStmt = $this->db->prepare("SELECT bio_capacity, recovery_rate, risk_modifier FROM gear_items WHERE id = ?");
+            $gearStmt->execute([$gearId]);
+            $gear = $gearStmt->fetch();
+
+            if (!$gear) {
+                continue;
+            }
+
+            $totals['bio_capacity'] += (int)($gear['bio_capacity'] ?? 0);
+            $totals['recovery_rate'] += (int)($gear['recovery_rate'] ?? 0);
+            $totals['risk_modifier'] += (int)($gear['risk_modifier'] ?? 0);
+        }
+
+        return $totals;
     }
     
     private function getMostCommon(array $items): string

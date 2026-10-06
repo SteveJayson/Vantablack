@@ -234,8 +234,7 @@ CREATE TABLE inventory (
     equipped BOOLEAN DEFAULT FALSE,
     acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (combatant_id) REFERENCES combatants(id) ON DELETE CASCADE,
-    FOREIGN KEY (gear_id) REFERENCES gear_items(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_inventory_item (combatant_id, gear_id)
+    FOREIGN KEY (gear_id) REFERENCES gear_items(id) ON DELETE CASCADE
 );
 
 -- ============================================
@@ -778,8 +777,7 @@ CREATE TABLE inventory (
     equipped BOOLEAN DEFAULT FALSE,
     acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (combatant_id) REFERENCES combatants(id) ON DELETE CASCADE,
-    FOREIGN KEY (gear_id) REFERENCES gear_items(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_inventory_item (combatant_id, gear_id)
+    FOREIGN KEY (gear_id) REFERENCES gear_items(id) ON DELETE CASCADE
 );
 
 -- ============================================

@@ -90,7 +90,7 @@ class FeasibilityEngine
         }
         
         if ($effectiveDrain < $capacity * 0.2) {
-            $warnings[] = '✅ LOW RISK: Loadout is well within safe parameters';
+            $warnings[] = 'LOW RISK: Loadout is well within safe parameters';
         }
         
         return $warnings;
