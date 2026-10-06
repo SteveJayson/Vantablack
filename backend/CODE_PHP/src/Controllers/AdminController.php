@@ -19,6 +19,155 @@ class AdminController
         $params = $request->getQueryParams();
         return $params[$key] ?? $default;
     }
+        /**
+     * POST /api/admin/grant-credits
+     * Body: { "adminId": 7, "targetUsername": "vantablack", "amount": 5000, "reason": "Bonus" }
+     */
+    public function grantCredits($request, $response, $args)
+    {
+        $this->db->beginTransaction();
+        
+        try {
+            $body = json_decode($request->getBody()->getContents(), true);
+            
+            $adminId = (int)($body['adminId'] ?? 0);
+            $targetUsername = trim($body['targetUsername'] ?? '');
+            $amount = (int)($body['amount'] ?? 0);
+            $reason = trim($body['reason'] ?? 'Admin grant');
+            
+            if (!$adminId || !$targetUsername || !$amount) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 400, false, 'adminId, targetUsername, and amount required');
+            }
+            
+            if ($amount <= 0 || $amount > 1000000) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 400, false, 'Amount must be between 1 and 1,000,000');
+            }
+            
+            // Verify admin
+            $stmt = $this->db->prepare("SELECT id, name FROM combatants WHERE id = ? AND role = 'admin'");
+            $stmt->execute([$adminId]);
+            $admin = $stmt->fetch();
+            
+            if (!$admin) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 403, false, 'Admin access required');
+            }
+            
+            // Find target by username
+            $stmt = $this->db->prepare("
+                SELECT u.combatant_id, c.name, c.credits
+                FROM users u
+                JOIN combatants c ON u.combatant_id = c.id
+                WHERE u.username = ?
+            ");
+            $stmt->execute([$targetUsername]);
+            $target = $stmt->fetch();
+            
+            if (!$target) {
+                $this->db->rollBack();
+                return $this->jsonResponse($response, 404, false, "User '{$targetUsername}' not found");
+            }
+            
+            $targetId = (int)$target['combatant_id'];
+            $before = (int)$target['credits'];
+            $after = $before + $amount;
+            
+            // Update credits
+            $stmt = $this->db->prepare("UPDATE combatants SET credits = ? WHERE id = ?");
+            $stmt->execute([$after, $targetId]);
+            
+            // Log grant
+            $stmt = $this->db->prepare("
+                INSERT INTO admin_grants 
+                (admin_id, admin_name, target_id, target_name, amount, reason, credits_before, credits_after)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $adminId,
+                $admin['name'],
+                $targetId,
+                $target['name'],
+                $amount,
+                $reason,
+                $before,
+                $after
+            ]);
+            
+            // Log to transactions for audit
+            try {
+                $stmt = $this->db->prepare("
+                    INSERT INTO transactions 
+                    (combatant_id, combatant_name, combatant_role, transaction_type, gear_id, gear_name, amount, credits_before, credits_after, status, notes)
+                    VALUES (?, ?, 'admin', 'purchase', 'admin-grant', 'Admin Credit Grant', ?, ?, ?, 'completed', ?)
+                ");
+                $stmt->execute([
+                    $targetId,
+                    $target['name'],
+                    $amount,
+                    $before,
+                    $after,
+                    "Granted by {$admin['name']}: $reason"
+                ]);
+            } catch (\Exception $e) {}
+            
+            $this->db->commit();
+            
+            return $this->jsonResponse($response, 200, true, "Granted ₵{$amount} to {$target['name']}", [
+                'targetId' => $targetId,
+                'targetName' => $target['name'],
+                'amount' => $amount,
+                'creditsBefore' => $before,
+                'creditsAfter' => $after,
+                'reason' => $reason
+            ]);
+            
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * GET /api/admin/grant-history
+     */
+    public function getGrantHistory($request, $response, $args)
+    {
+        try {
+            $adminId = $this->getQuery($request, 'adminId');
+            if (!$this->isAdmin($adminId)) {
+                return $this->jsonResponse($response, 403, false, 'Admin access required');
+            }
+            
+            $limit = (int)$this->getQuery($request, 'limit', 20);
+            
+            $stmt = $this->db->prepare("
+                SELECT 
+                    id,
+                    admin_name as adminName,
+                    target_name as targetName,
+                    amount,
+                    reason,
+                    credits_before as creditsBefore,
+                    credits_after as creditsAfter,
+                    granted_at as grantedAt
+                FROM admin_grants
+                ORDER BY granted_at DESC
+                LIMIT ?
+            ");
+            $stmt->execute([$limit]);
+            $history = $stmt->fetchAll();
+            
+            return $this->jsonResponse($response, 200, true, 'Grant history retrieved', [
+                'history' => $history,
+                'total' => count($history)
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
     
     /**
      * GET /api/admin/dashboard

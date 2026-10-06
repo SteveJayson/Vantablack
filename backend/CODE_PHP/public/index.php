@@ -136,6 +136,8 @@ $app->post('/api/loadouts/validate', \Aegis\Controllers\LoadoutController::class
 $app->post('/api/loadouts/equip', \Aegis\Controllers\LoadoutController::class . ':equipLoadout');
 $app->get('/api/loadouts/{id}', \Aegis\Controllers\LoadoutController::class . ':getLoadout');
 $app->get('/api/combatants/{id}/loadout', \Aegis\Controllers\LoadoutController::class . ':getCombatantLoadout');
+$app->post('/api/loadouts/equip-item', \Aegis\Controllers\LoadoutController::class . ':equipItem');
+$app->post('/api/loadouts/unequip-item', \Aegis\Controllers\LoadoutController::class . ':unequipItem');
 
 // ============================================
 // MARKETPLACE
@@ -254,6 +256,8 @@ $app->get('/api/admin/users', \Aegis\Controllers\AdminController::class . ':getU
 $app->get('/api/admin/users/{id}/transactions', \Aegis\Controllers\AdminController::class . ':getUserTransactions');
 $app->get('/api/admin/login-history', \Aegis\Controllers\AdminController::class . ':getLoginHistory');
 $app->get('/api/admin/charts', \Aegis\Controllers\AdminController::class . ':getChartData');
+$app->post('/api/admin/grant-credits', \Aegis\Controllers\AdminController::class . ':grantCredits');
+$app->get('/api/admin/grant-history', \Aegis\Controllers\AdminController::class . ':getGrantHistory');
 
 // ============================================
 // WEATHER (3RD PARTY API)
