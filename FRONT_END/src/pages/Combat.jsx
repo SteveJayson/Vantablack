@@ -5,6 +5,8 @@ const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 export default function Combat({ user, onBack, onBattleComplete }) {
     const [opponents, setOpponents] = useState([]);
     const [selectedOpponent, setSelectedOpponent] = useState(null);
+    const [playerBioCapacity, setPlayerBioCapacity] = useState(Number(user.bioCapacityMax) || 0);
+    const [playerPower, setPlayerPower] = useState(Math.round((Number(user.bioCapacityMax) || 0) * 0.7));
     const [battleResult, setBattleResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [history, setHistory] = useState([]);
@@ -13,7 +15,26 @@ export default function Combat({ user, onBack, onBattleComplete }) {
     useEffect(() => {
         loadOpponents();
         loadHistory();
+        loadPlayerStats();
     }, []);
+
+    const loadPlayerStats = async () => {
+        try {
+            const res = await fetch(`${API}/combatants/${user.id}`);
+            const data = await res.json();
+            const combatant = data.data?.combatant;
+
+            if (data.success && combatant) {
+                const effectiveBioCapacity = Number(
+                    combatant.effectiveBioCapacity ?? combatant.bioCapacityMax ?? user.bioCapacityMax ?? 0
+                );
+                setPlayerBioCapacity(effectiveBioCapacity);
+                setPlayerPower(Number(combatant.powerScore ?? effectiveBioCapacity * 0.7));
+            }
+        } catch (err) {
+            console.error('Failed to load player power:', err);
+        }
+    };
 
     const loadOpponents = async () => {
         try {
@@ -139,7 +160,7 @@ export default function Combat({ user, onBack, onBattleComplete }) {
                                     <div style={styles.oppStats}>
                                         <div style={styles.oppStat}>
                                             <span style={styles.statLabel}>BIO</span>
-                                            <span style={styles.statValue}>{opp.bioCapacityMax}</span>
+                                            <span style={styles.statValue}>{opp.effectiveBioCapacity ?? opp.bioCapacityMax}</span>
                                         </div>
                                         <div style={styles.oppStat}>
                                             <span style={styles.statLabel}>CREDITS</span>
@@ -173,7 +194,7 @@ export default function Combat({ user, onBack, onBattleComplete }) {
                                 <div style={styles.fighterName}>{user.name}</div>
                                 <div style={styles.fighterRole}>{user.role.toUpperCase()}</div>
                                 <div style={styles.fighterStats}>
-                                    {user.bioCapacityMax} • ₵{user.credits?.toLocaleString()}
+                                    {playerBioCapacity} • ₵{user.credits?.toLocaleString()}
                                 </div>
                                 <div style={{
                                     marginTop: '8px',
@@ -184,7 +205,7 @@ export default function Combat({ user, onBack, onBattleComplete }) {
                                     color: '#d1d5db',
                                     fontWeight: 'bold'
                                 }}>
-                                    Power: {Math.round(user.bioCapacityMax * 0.7)}
+                                    Power: {Math.round(playerPower)}
                                 </div>
                             </div>
 
@@ -206,7 +227,7 @@ export default function Combat({ user, onBack, onBattleComplete }) {
                                         <div style={styles.fighterName}>{selectedOpponent.name}</div>
                                         <div style={styles.fighterRole}>{selectedOpponent.role.toUpperCase()}</div>
                                         <div style={styles.fighterStats}>
-                                            {selectedOpponent.bioCapacityMax} • ₵{selectedOpponent.credits.toLocaleString()}
+                                            {selectedOpponent.effectiveBioCapacity ?? selectedOpponent.bioCapacityMax} • ₵{selectedOpponent.credits.toLocaleString()}
                                         </div>
                                         <div style={{
                                             marginTop: '8px',
@@ -217,7 +238,7 @@ export default function Combat({ user, onBack, onBattleComplete }) {
                                             color: '#d1d5db',
                                             fontWeight: 'bold'
                                         }}>
-                                            Power: {Math.round(selectedOpponent.bioCapacityMax * 0.7)}
+                                            Power: {Math.round(selectedOpponent.powerScore)}
                                         </div>
                                     </>
                                 ) : (

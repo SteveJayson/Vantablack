@@ -22,6 +22,7 @@ export default function Leaderboards({ user, onBack }) {
     const loadData = async () => {
         setLoading(true);
         setError('');
+        setData(null);
         try {
             const endpoints = {
                 global: '/leaderboards/global?limit=20',
@@ -34,17 +35,26 @@ export default function Leaderboards({ user, onBack }) {
             const res = await fetch(`${API}${endpoints[activeTab]}`);
             const result = await res.json();
 
-            if (result.success) {
-                setData(result.data.data || result.data);
-            } else {
-                setError(result.message);
+            if (!res.ok || !result.success) {
+                setError(result.message || 'Cannot load leaderboard');
+                return;
             }
+
+            const rows = result.data?.data ?? result.data;
+            if (!Array.isArray(rows)) {
+                setError('Invalid leaderboard response');
+                return;
+            }
+
+            setData(rows);
         } catch (err) {
             setError('Cannot load leaderboard');
         } finally {
             setLoading(false);
         }
     };
+
+    const formatCredits = (value) => Number(value ?? 0).toLocaleString();
 
     const loadMyRank = async () => {
         try {
@@ -140,7 +150,7 @@ export default function Leaderboards({ user, onBack }) {
                             <div style={styles.statLabel}>WINS</div>
                         </div>
                         <div style={styles.statCell}>
-                            <div style={styles.statValue}>₵{entry.credits.toLocaleString()}</div>
+                            <div style={styles.statValue}>₵{formatCredits(entry.credits)}</div>
                             <div style={styles.statLabel}>CREDITS</div>
                         </div>
                     </>
@@ -166,15 +176,15 @@ export default function Leaderboards({ user, onBack }) {
                 {category === 'earners' && (
                     <>
                         <div style={styles.statCell}>
-                            <div style={styles.statValue}>₵{entry.netWorth.toLocaleString()}</div>
-                            <div style={styles.statLabel}>NET WORTH</div>
-                        </div>
-                        <div style={styles.statCell}>
-                            <div style={styles.statValue}>₵{entry.totalEarned.toLocaleString()}</div>
+                            <div style={styles.statValue}>₵{formatCredits(entry.totalEarned)}</div>
                             <div style={styles.statLabel}>EARNED</div>
                         </div>
                         <div style={styles.statCell}>
-                            <div style={{ ...styles.statValue, color: '#00ff88' }}>₵{entry.gearValue.toLocaleString()}</div>
+                            <div style={styles.statValue}>₵{formatCredits(entry.netWorth)}</div>
+                            <div style={styles.statLabel}>NET WORTH</div>
+                        </div>
+                        <div style={styles.statCell}>
+                            <div style={{ ...styles.statValue, color: '#00ff88' }}>₵{formatCredits(entry.gearValue)}</div>
                             <div style={styles.statLabel}>GEAR VALUE</div>
                         </div>
                     </>
@@ -191,7 +201,7 @@ export default function Leaderboards({ user, onBack }) {
                             <div style={styles.statLabel}>LEGENDARY</div>
                         </div>
                         <div style={styles.statCell}>
-                            <div style={{ ...styles.statValue, color: '#00ff88' }}>₵{entry.totalGearValue.toLocaleString()}</div>
+                            <div style={{ ...styles.statValue, color: '#00ff88' }}>₵{formatCredits(entry.totalGearValue)}</div>
                             <div style={styles.statLabel}>VALUE</div>
                         </div>
                     </>
@@ -383,8 +393,8 @@ export default function Leaderboards({ user, onBack }) {
                             )}
                             {activeTab === 'earners' && (
                                 <>
-                                    <div style={styles.statCell}><div style={{ ...styles.statLabel, color: '#00f0ff' }}>NET WORTH</div></div>
                                     <div style={styles.statCell}><div style={{ ...styles.statLabel, color: '#00f0ff' }}>EARNED</div></div>
+                                    <div style={styles.statCell}><div style={{ ...styles.statLabel, color: '#00f0ff' }}>NET WORTH</div></div>
                                     <div style={styles.statCell}><div style={{ ...styles.statLabel, color: '#00f0ff' }}>GEAR VALUE</div></div>
                                 </>
                             )}

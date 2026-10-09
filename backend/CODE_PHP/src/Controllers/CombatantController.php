@@ -88,6 +88,8 @@ class CombatantController
                 return $this->jsonResponse($response, 404, false, 'Combatant not found');
             }
             
+            $effectiveBioCapacity = (int)$combatant['bioCapacityMax'];
+
             // Load loadout for heroes/villains
             if (in_array($combatant['role'], ['hero', 'villain'])) {
                 $loadout = $this->getLoadoutDetails($id);
@@ -96,8 +98,12 @@ class CombatantController
                 if (!empty($loadout)) {
                     $stats = $this->engine->calculate($combatant, $loadout);
                     $combatant['loadoutStats'] = $stats;
+                    $effectiveBioCapacity = (int)$stats['stats']['finalBioCapacity'];
                 }
             }
+
+            $combatant['effectiveBioCapacity'] = $effectiveBioCapacity;
+            $combatant['powerScore'] = round($effectiveBioCapacity * 0.7, 1);
             
             return $this->jsonResponse($response, 200, true, 'Combatant found', ['combatant' => $combatant]);
             

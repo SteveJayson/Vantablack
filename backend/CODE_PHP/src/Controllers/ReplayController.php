@@ -205,7 +205,7 @@ class ReplayController
                     total_damage_taken as damageTaken,
                     replay_duration as duration,
                     views,
-                    created_at as createdAt
+                    UNIX_TIMESTAMP(created_at) as createdAtEpoch
                 FROM battle_replays
                 WHERE combatant_id = ?
             ";
@@ -244,6 +244,10 @@ class ReplayController
                 $r['damageTaken'] = (int)$r['damageTaken'];
                 $r['duration'] = (int)$r['duration'];
                 $r['views'] = (int)$r['views'];
+                $r['createdAt'] = $r['createdAtEpoch'] === null
+                    ? null
+                    : gmdate('Y-m-d\TH:i:s\Z', (int)$r['createdAtEpoch']);
+                unset($r['createdAtEpoch']);
             }
             
             return $this->jsonResponse($response, 200, true, 'Replays retrieved', [
@@ -331,7 +335,7 @@ class ReplayController
                     br.result,
                     br.total_damage_dealt as damageDealt,
                     br.views,
-                    br.created_at as createdAt,
+                    UNIX_TIMESTAMP(br.created_at) as createdAtEpoch,
                     c.name as ownerName,
                     c.role as ownerRole,
                     c.faction as ownerFaction
@@ -349,6 +353,10 @@ class ReplayController
                 $r['winnerId'] = (int)$r['winnerId'];
                 $r['damageDealt'] = (int)$r['damageDealt'];
                 $r['views'] = (int)$r['views'];
+                $r['createdAt'] = $r['createdAtEpoch'] === null
+                    ? null
+                    : gmdate('Y-m-d\TH:i:s\Z', (int)$r['createdAtEpoch']);
+                unset($r['createdAtEpoch']);
             }
             
             return $this->jsonResponse($response, 200, true, 'Shared replays retrieved', [

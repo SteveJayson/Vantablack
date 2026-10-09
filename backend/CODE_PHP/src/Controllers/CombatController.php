@@ -43,16 +43,23 @@ class CombatController
                     c.role, 
                     c.faction,
                     c.bio_capacity_max as bioCapacityMax,
+                    c.bio_capacity_max + COALESCE(equipment.gearBioCapacity, 0) as effectiveBioCapacity,
                     c.base_recovery as baseRecovery,
                     c.base_risk as baseRisk,
                     c.credits,
                     c.clearance_level as clearanceLevel,
-                    COALESCE(cs.total_battles_won * 10 + c.credits / 100, 0) as powerScore,
+                    ROUND((c.bio_capacity_max + COALESCE(equipment.gearBioCapacity, 0)) * 0.7, 1) as powerScore,
                     COALESCE(cs.total_battles_won, 0) as wins,
                     COALESCE(cs.total_battles_lost, 0) as losses,
                     COALESCE(cs.current_win_streak, 0) as currentStreak
                 FROM combatants c
                 LEFT JOIN combatant_stats cs ON c.id = cs.combatant_id
+                LEFT JOIN (
+                    SELECT l.combatant_id, SUM(g.bio_capacity) as gearBioCapacity
+                    FROM loadouts l
+                    JOIN gear_items g ON g.id IN (l.helmet_id, l.core_id, l.dampener_id, l.gauntlets_id, l.battery_id)
+                    GROUP BY l.combatant_id
+                ) equipment ON equipment.combatant_id = c.id
                 WHERE c.id != ? 
                     AND c.role IN ('hero', 'villain')
                 ORDER BY RAND()
@@ -65,6 +72,7 @@ class CombatController
             foreach ($opponents as &$opp) {
                 $opp['id'] = (int)$opp['id'];
                 $opp['bioCapacityMax'] = (int)$opp['bioCapacityMax'];
+                $opp['effectiveBioCapacity'] = (int)$opp['effectiveBioCapacity'];
                 $opp['credits'] = (int)$opp['credits'];
                 $opp['powerScore'] = round((float)$opp['powerScore'], 1);
                 $opp['wins'] = (int)$opp['wins'];
@@ -114,6 +122,7 @@ class CombatController
                     c.role, 
                     c.faction,
                     c.bio_capacity_max as bioCapacityMax,
+                    c.bio_capacity_max + COALESCE(equipment.gearBioCapacity, 0) as effectiveBioCapacity,
                     c.base_recovery as baseRecovery,
                     c.base_risk as baseRisk,
                     c.credits,
@@ -122,6 +131,12 @@ class CombatController
                     COALESCE(cs.current_win_streak, 0) as currentStreak
                 FROM combatants c
                 LEFT JOIN combatant_stats cs ON c.id = cs.combatant_id
+                LEFT JOIN (
+                    SELECT l.combatant_id, SUM(g.bio_capacity) as gearBioCapacity
+                    FROM loadouts l
+                    JOIN gear_items g ON g.id IN (l.helmet_id, l.core_id, l.dampener_id, l.gauntlets_id, l.battery_id)
+                    GROUP BY l.combatant_id
+                ) equipment ON equipment.combatant_id = c.id
                 WHERE c.id IN (?, ?)
             ");
             $stmt->execute([$attackerId, $defenderId]);
@@ -144,8 +159,8 @@ class CombatController
             // COMBAT CALCULATION
             // ============================================
             
-            $attackerBasePower = $attacker['bioCapacityMax'] * 0.7;
-            $defenderBasePower = $defender['bioCapacityMax'] * 0.7;
+            $attackerBasePower = $attacker['effectiveBioCapacity'] * 0.7;
+            $defenderBasePower = $defender['effectiveBioCapacity'] * 0.7;
             
             $attackerTotal = $attacker['wins'] + $attacker['losses'];
             $defenderTotal = $defender['wins'] + $defender['losses'];
