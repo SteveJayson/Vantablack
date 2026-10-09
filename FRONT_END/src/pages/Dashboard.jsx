@@ -123,9 +123,10 @@ export default function Dashboard({
     }
   };
 
-  const grantCredits = async () => {
-    if (!grantUsername.trim() || !grantAmount) {
-      setGrantMessage("❌ Username and amount required");
+  const adjustCredits = async (operation) => {
+    const amount = Number(grantAmount);
+    if (!grantUsername.trim() || !Number.isInteger(amount) || amount <= 0) {
+      setGrantMessage("Enter a username and a positive whole-number amount");
       return;
     }
 
@@ -133,20 +134,26 @@ export default function Dashboard({
     setGrantMessage("");
 
     try {
-      const res = await fetch(`${API}/admin/grant-credits`, {
+      const endpoint = operation === "remove" ? "remove-credits" : "grant-credits";
+      const res = await fetch(`${API}/admin/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           adminId: user.id,
           targetUsername: grantUsername.trim(),
-          amount: parseInt(grantAmount),
-          reason: grantReason.trim() || "Admin grant",
+          amount,
+          reason: grantReason.trim() || (operation === "remove" ? "Admin removal" : "Admin grant"),
         }),
       });
       const data = await res.json();
 
       if (data.success) {
         setGrantMessage(data.message);
+        if (Number(data.data.targetId) === Number(user.id)) {
+          const updatedUser = { ...user, credits: data.data.creditsAfter };
+          setUser(updatedUser);
+          localStorage.setItem("aegis_user", JSON.stringify(updatedUser));
+        }
         setGrantUsername("");
         setGrantAmount("");
         setGrantReason("");
@@ -924,7 +931,7 @@ export default function Dashboard({
                   {/* GRANT CREDITS TO USER */}
                   <div style={{ marginTop: "30px" }}>
                     <h3 style={styles.sectionTitle}>
-                       GRANT CREDITS TO USER
+                     ADJUST USER CREDITS
                     </h3>
 
                     {grantMessage && (
@@ -932,14 +939,10 @@ export default function Dashboard({
                         style={{
                           padding: "10px",
                           marginBottom: "15px",
-                          background: grantMessage.toLowerCase().includes("success") || grantMessage.toLowerCase().includes("granted") || grantMessage.toLowerCase().includes("complete")
-                            ? "rgba(0,255,136,0.1)"
-                            : "rgba(255,0,68,0.1)",
-                          border: `1px solid ${grantMessage.toLowerCase().includes("success") || grantMessage.toLowerCase().includes("granted") || grantMessage.toLowerCase().includes("complete") ? "#00ff88" : "#ff0044"}`,
-                          color: grantMessage.toLowerCase().includes("success") || grantMessage.toLowerCase().includes("granted") || grantMessage.toLowerCase().includes("complete")
-                            ? "#00ff88"
-                            : "#ff0044",
-                          borderRadius: "8px",
+                          background: "#f3f4f6",
+                          border: "1px solid #d1d5db",
+                          color: "#111827",
+                          borderRadius: "4px",
                           fontSize: "0.8rem",
                         }}
                       >
@@ -960,7 +963,7 @@ export default function Dashboard({
                           style={{
                             display: "block",
                             fontSize: "0.65rem",
-                            color: "#8888cc",
+                            color: "#4b5563",
                             marginBottom: "6px",
                             letterSpacing: "1px",
                           }}
@@ -975,11 +978,11 @@ export default function Dashboard({
                           style={{
                             width: "100%",
                             padding: "10px 12px",
-                            background: "rgba(0,0,0,0.4)",
-                            border: "1px solid rgba(0,240,255,0.2)",
-                            borderRadius: "8px",
-                            color: "#e0e0ff",
-                            fontFamily: "monospace",
+                            background: "#ffffff",
+                            border: "1px solid #9ca3af",
+                            borderRadius: "4px",
+                            color: "#111827",
+                            fontFamily: "inherit",
                             fontSize: "0.8rem",
                             boxSizing: "border-box",
                           }}
@@ -990,7 +993,7 @@ export default function Dashboard({
                           style={{
                             display: "block",
                             fontSize: "0.65rem",
-                            color: "#8888cc",
+                            color: "#4b5563",
                             marginBottom: "6px",
                             letterSpacing: "1px",
                           }}
@@ -1007,11 +1010,11 @@ export default function Dashboard({
                           style={{
                             width: "100%",
                             padding: "10px 12px",
-                            background: "rgba(0,0,0,0.4)",
-                            border: "1px solid rgba(0,240,255,0.2)",
-                            borderRadius: "8px",
-                            color: "#e0e0ff",
-                            fontFamily: "monospace",
+                            background: "#ffffff",
+                            border: "1px solid #9ca3af",
+                            borderRadius: "4px",
+                            color: "#111827",
+                            fontFamily: "inherit",
                             fontSize: "0.8rem",
                             boxSizing: "border-box",
                           }}
@@ -1024,7 +1027,7 @@ export default function Dashboard({
                         style={{
                           display: "block",
                           fontSize: "0.65rem",
-                          color: "#8888cc",
+                          color: "#4b5563",
                           marginBottom: "6px",
                           letterSpacing: "1px",
                         }}
@@ -1039,43 +1042,59 @@ export default function Dashboard({
                         style={{
                           width: "100%",
                           padding: "10px 12px",
-                          background: "rgba(0,0,0,0.4)",
-                          border: "1px solid rgba(0,240,255,0.2)",
-                          borderRadius: "8px",
-                          color: "#e0e0ff",
-                          fontFamily: "monospace",
+                          background: "#ffffff",
+                          border: "1px solid #9ca3af",
+                          borderRadius: "4px",
+                          color: "#111827",
+                          fontFamily: "inherit",
                           fontSize: "0.8rem",
                           boxSizing: "border-box",
                         }}
                       />
                     </div>
 
-                    <button
-                      onClick={grantCredits}
-                      disabled={grantLoading}
-                      style={{
-                        width: "100%",
-                        padding: "14px",
-                        background: "linear-gradient(90deg, #00ff88, #ffaa00)",
-                        border: "none",
-                        borderRadius: "8px",
-                        color: "#0a0a1a",
-                        fontFamily: "Orbitron, monospace",
-                        fontSize: "0.85rem",
-                        fontWeight: 700,
-                        letterSpacing: "2px",
-                        cursor: grantLoading ? "not-allowed" : "pointer",
-                        opacity: grantLoading ? 0.6 : 1,
-                      }}
-                    >
-                      {grantLoading ? "GRANTING..." : "GRANT CREDITS"}
-                    </button>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "10px" }}>
+                      <button
+                        onClick={() => adjustCredits("add")}
+                        disabled={grantLoading}
+                        style={{
+                          padding: "12px",
+                          background: "#e5e7eb",
+                          border: "1px solid #9ca3af",
+                          borderRadius: "4px",
+                          color: "#111827",
+                          fontSize: "0.85rem",
+                          fontWeight: 700,
+                          cursor: grantLoading ? "not-allowed" : "pointer",
+                          opacity: grantLoading ? 0.6 : 1,
+                        }}
+                      >
+                        {grantLoading ? "PROCESSING..." : "ADD CREDITS"}
+                      </button>
+                      <button
+                        onClick={() => adjustCredits("remove")}
+                        disabled={grantLoading}
+                        style={{
+                          padding: "12px",
+                          background: "#f3f4f6",
+                          border: "1px solid #9ca3af",
+                          borderRadius: "4px",
+                          color: "#111827",
+                          fontSize: "0.85rem",
+                          fontWeight: 700,
+                          cursor: grantLoading ? "not-allowed" : "pointer",
+                          opacity: grantLoading ? 0.6 : 1,
+                        }}
+                      >
+                        {grantLoading ? "PROCESSING..." : "REMOVE CREDITS"}
+                      </button>
+                    </div>
                   </div>
 
                   {/* GRANT HISTORY */}
                   {grantHistory.length > 0 && (
                     <div style={{ marginTop: "30px" }}>
-                      <h3 style={styles.sectionTitle}>RECENT GRANTS</h3>
+                      <h3 style={styles.sectionTitle}>RECENT CREDIT ADJUSTMENTS</h3>
                       <table style={styles.dataTable}>
                         <thead>
                           <tr>
@@ -1094,11 +1113,11 @@ export default function Dashboard({
                               <td
                                 style={{
                                   ...styles.td,
-                                  color: "#00ff88",
+                                  color: "#d1d5db",
                                   fontWeight: "bold",
                                 }}
                               >
-                                +₵{g.amount.toLocaleString()}
+                                {Number(g.amount) < 0 ? "-" : "+"}₵{Math.abs(Number(g.amount)).toLocaleString()}
                               </td>
                               <td style={styles.td}>{g.reason}</td>
                               <td style={styles.td}>

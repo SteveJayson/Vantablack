@@ -90,7 +90,7 @@ class LeaderboardController
                 FROM combatants c
                 LEFT JOIN combatant_stats cs ON c.id = cs.combatant_id
                 WHERE c.role IN ('hero', 'villain')
-                ORDER BY netWorth DESC
+                ORDER BY totalEarned DESC, netWorth DESC
                 LIMIT ?
             ");
             $stmt->execute([$limit]);
@@ -357,30 +357,62 @@ class LeaderboardController
             
             // Earner rank
             $stmt = $this->db->prepare("
-                SELECT COUNT(*) + 1 as rank FROM combatants c
-                LEFT JOIN combatant_stats cs ON c.id = cs.combatant_id
-                WHERE c.role IN ('hero', 'villain')
-                AND (c.credits + COALESCE((SELECT SUM(g.price) FROM inventory i JOIN gear_items g ON i.gear_id = g.id WHERE i.combatant_id = c.id), 0)) >
-                (
-                    SELECT c2.credits + COALESCE((SELECT SUM(g2.price) FROM inventory i2 JOIN gear_items g2 ON i2.gear_id = g2.id WHERE i2.combatant_id = c2.id), 0)
-                    FROM combatants c2 WHERE c2.id = ?
+                SELECT COUNT(*) + 1 as rank FROM (
+                    SELECT
+                        c.id,
+                        COALESCE(cs.total_credits_earned, 0) as totalEarned,
+                        c.credits + COALESCE((SELECT SUM(g.price) FROM inventory i JOIN gear_items g ON i.gear_id = g.id WHERE i.combatant_id = c.id), 0) as netWorth
+                    FROM combatants c
+                    LEFT JOIN combatant_stats cs ON c.id = cs.combatant_id
+                    WHERE c.role IN ('hero', 'villain')
+                ) as earners
+                WHERE earners.totalEarned > (
+                    SELECT COALESCE(cs2.total_credits_earned, 0)
+                    FROM combatants c2
+                    LEFT JOIN combatant_stats cs2 ON c2.id = cs2.combatant_id
+                    WHERE c2.id = ?
+                )
+                OR (
+                    earners.totalEarned = (
+                        SELECT COALESCE(cs2.total_credits_earned, 0)
+                        FROM combatants c2
+                        LEFT JOIN combatant_stats cs2 ON c2.id = cs2.combatant_id
+                        WHERE c2.id = ?
+                    )
+                    AND earners.netWorth > (
+                        SELECT c2.credits + COALESCE((SELECT SUM(g2.price) FROM inventory i2 JOIN gear_items g2 ON i2.gear_id = g2.id WHERE i2.combatant_id = c2.id), 0)
+                        FROM combatants c2 WHERE c2.id = ?
+                    )
                 )
             ");
-            $stmt->execute([$combatantId]);
+            $stmt->execute([$combatantId, $combatantId, $combatantId]);
             $earnerRank = (int)$stmt->fetch()['rank'];
             
             // Collector rank
             $stmt = $this->db->prepare("
                 SELECT COUNT(*) + 1 as rank FROM (
-                    SELECT c.id, COUNT(i.id) as cnt
+                    SELECT
+                        c.id,
+                        COUNT(i.id) as cnt,
+                        SUM(CASE WHEN g.is_legendary = 1 THEN 1 ELSE 0 END) as legendaryCount
                     FROM combatants c
                     LEFT JOIN inventory i ON c.id = i.combatant_id
+                    LEFT JOIN gear_items g ON i.gear_id = g.id
                     WHERE c.role IN ('hero', 'villain')
                     GROUP BY c.id
                 ) as t
                 WHERE t.cnt > (SELECT COUNT(*) FROM inventory WHERE combatant_id = ?)
+                OR (
+                    t.cnt = (SELECT COUNT(*) FROM inventory WHERE combatant_id = ?)
+                    AND t.legendaryCount > (
+                        SELECT COALESCE(SUM(CASE WHEN g.is_legendary = 1 THEN 1 ELSE 0 END), 0)
+                        FROM inventory i
+                        JOIN gear_items g ON i.gear_id = g.id
+                        WHERE i.combatant_id = ?
+                    )
+                )
             ");
-            $stmt->execute([$combatantId]);
+            $stmt->execute([$combatantId, $combatantId, $combatantId]);
             $collectorRank = (int)$stmt->fetch()['rank'];
             
             // Achievement rank

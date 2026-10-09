@@ -257,6 +257,7 @@ $app->get('/api/admin/users/{id}/transactions', \Aegis\Controllers\AdminControll
 $app->get('/api/admin/login-history', \Aegis\Controllers\AdminController::class . ':getLoginHistory');
 $app->get('/api/admin/charts', \Aegis\Controllers\AdminController::class . ':getChartData');
 $app->post('/api/admin/grant-credits', \Aegis\Controllers\AdminController::class . ':grantCredits');
+$app->post('/api/admin/remove-credits', \Aegis\Controllers\AdminController::class . ':removeCredits');
 $app->get('/api/admin/grant-history', \Aegis\Controllers\AdminController::class . ':getGrantHistory');
 
 // ============================================
