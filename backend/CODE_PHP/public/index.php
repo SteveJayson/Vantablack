@@ -280,58 +280,169 @@ $app->map(['GET', 'POST'], '/api/external/generate-bot', \Aegis\Controllers\Exte
 $app->map(['GET', 'POST'], '/api/external/generate-bots', \Aegis\Controllers\ExternalApiController::class . ':generateBots');
 
 // ============================================
-// HEALTH CHECK
+// HEALTH CHECK & DIAGNOSTICS
 // ============================================
 $app->get('/api/health', function ($request, $response, $args) {
     $apiKey = defined('OPENWEATHER_API_KEY') ? OPENWEATHER_API_KEY : '';
-    $weatherEnabled = !empty($apiKey) && $apiKey !== 'YOUR_API_KEY_HERE';
-    
-    $payload = [
-        'status' => 200,
-        'success' => true,
-        'message' => 'Vantablack API is running!',
-        'data' => [
-            'version' => '5.0.0',
-            'timestamp' => date('Y-m-d H:i:s'),
-            'environment' => getenv('APP_ENV') ?: 'production',
-            'database' => [
-                'host' => DB_HOST,
-                'port' => DB_PORT,
-                'name' => DB_NAME,
-                'connected' => true
-            ],
-            'features' => [
-                'auth' => true,
-                'analytics' => true,
-                'missions' => true,
-                'admin' => true,
-                'marketplace' => true,
-                'roles' => true,
-                'weather' => $weatherEnabled,
-                'weather_mode' => $weatherEnabled ? 'LIVE' : 'DEMO'
-            ]
-        ]
+    $weatherConfigured = !empty($apiKey) && $apiKey !== 'YOUR_API_KEY_HERE';
+
+    // Live Database Connectivity & Diagnostics
+    $dbHealth = \Aegis\Config\Database::testConnection();
+
+    // Required Environment Variables Audit
+    $requiredEnvs = [
+        'DB_HOST' => getenv('DB_HOST') ?: 'default (localhost)',
+        'DB_NAME' => getenv('DB_NAME') ?: 'default (aegis_db)',
+        'DB_USER' => getenv('DB_USER') ?: 'default (root)',
+        'DB_PORT' => getenv('DB_PORT') ?: 'default (3306)',
+        'DB_PASS' => getenv('DB_PASS') ? 'configured' : 'not set / empty',
+        'OPENWEATHER_API_KEY' => $weatherConfigured ? 'configured' : 'default / demo mode'
     ];
-    $response->getBody()->write(json_encode($payload));
-    return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+
+    // PHP Extensions Check
+    $extensions = [
+        'pdo' => extension_loaded('pdo'),
+        'pdo_mysql' => extension_loaded('pdo_mysql'),
+        'json' => extension_loaded('json'),
+        'curl' => extension_loaded('curl'),
+        'mbstring' => extension_loaded('mbstring'),
+        'openssl' => extension_loaded('openssl')
+    ];
+
+    $issues = [];
+    $recommendations = [];
+
+    if (!$dbHealth['connected']) {
+        $issues[] = [
+            'type' => 'DATABASE_OFFLINE',
+            'severity' => 'critical',
+            'error' => $dbHealth['error']['message'] ?? 'Database unreachable',
+            'recommendation' => $dbHealth['error']['recommendation'] ?? 'Check DB settings'
+        ];
+        $recommendations[] = $dbHealth['error']['recommendation'] ?? 'Verify DB connection parameters.';
+    } elseif (!empty($dbHealth['missing_tables'])) {
+        $issues[] = [
+            'type' => 'DATABASE_SCHEMA_INCOMPLETE',
+            'severity' => 'high',
+            'error' => 'Missing essential tables: ' . implode(', ', $dbHealth['missing_tables']),
+            'recommendation' => 'Import aegis_backup.sql into your database to create all required tables.'
+        ];
+        $recommendations[] = 'Run SQL migration / import aegis_backup.sql to initialize missing tables.';
+    }
+
+    if (!$extensions['pdo_mysql']) {
+        $issues[] = [
+            'type' => 'PHP_EXTENSION_MISSING',
+            'severity' => 'critical',
+            'error' => 'pdo_mysql extension is not loaded',
+            'recommendation' => 'Enable pdo_mysql in php.ini.'
+        ];
+    }
+
+    $isHealthy = empty($issues);
+    $httpStatus = $isHealthy ? 200 : ($dbHealth['connected'] ? 200 : 503);
+
+    $payload = [
+        'status' => $httpStatus,
+        'success' => $isHealthy,
+        'message' => $isHealthy ? 'Vantablack API is fully healthy!' : 'Vantablack API has diagnostic issues',
+        'timestamp' => date('Y-m-d H:i:s'),
+        'diagnostics' => [
+            'api_version' => '5.0.0',
+            'environment' => getenv('APP_ENV') ?: (getenv('RENDER') ? 'render-cloud' : 'local-development'),
+            'php_version' => PHP_VERSION,
+            'memory_usage' => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
+            'database' => $dbHealth,
+            'environment_variables' => $requiredEnvs,
+            'php_extensions' => $extensions,
+            'weather_integration' => [
+                'configured' => $weatherConfigured,
+                'mode' => $weatherConfigured ? 'LIVE' : 'DEMO'
+            ]
+        ],
+        'issues_found' => $issues,
+        'recommendations' => $recommendations
+    ];
+
+    $response->getBody()->write(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    return $response->withHeader('Content-Type', 'application/json')->withStatus($httpStatus);
 });
 
 // ============================================
-// 404 HANDLER (must be last)
+// 404 HANDLER (must be last route)
 // ============================================
 $app->map(['GET', 'POST', 'PUT', 'DELETE'], '/{routes:.+}', function ($request, $response, $args) {
     $payload = [
         'status' => 404,
         'success' => false,
-        'message' => 'Route not found',
+        'message' => 'Route not found: ' . $request->getMethod() . ' ' . (string)$request->getUri()->getPath(),
+        'hint' => 'Check available endpoints in /api/health or review route definitions in index.php',
         'data' => [
             'url' => (string)$request->getUri()->getPath(),
             'method' => $request->getMethod()
         ]
     ];
-    $response->getBody()->write(json_encode($payload));
+    $response->getBody()->write(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
 });
 
-$app->addErrorMiddleware(true, true, true);
+// ============================================
+// GLOBAL ERROR HANDLER & MIDDLEWARE
+// ============================================
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+$customErrorHandler = function (
+    \Psr\Http\Message\ServerRequestInterface $request,
+    \Throwable $exception,
+    bool $displayErrorDetails,
+    bool $logErrors,
+    bool $logErrorDetails
+) use ($app) {
+    $statusCode = 500;
+    if ($exception instanceof \Slim\Exception\HttpNotFoundException) {
+        $statusCode = 404;
+    } elseif ($exception instanceof \Slim\Exception\HttpMethodNotAllowedException) {
+        $statusCode = 405;
+    } elseif ($exception instanceof \Slim\Exception\HttpUnauthorizedException) {
+        $statusCode = 401;
+    } elseif ($exception instanceof \Slim\Exception\HttpForbiddenException) {
+        $statusCode = 403;
+    } elseif ($exception instanceof \Slim\Exception\HttpBadRequestException) {
+        $statusCode = 400;
+    }
+
+    $msg = $exception->getMessage();
+    $hint = 'Internal server error occurred.';
+
+    if (stripos($msg, 'Database') !== false || stripos($msg, 'SQL') !== false || stripos($msg, 'PDO') !== false) {
+        $hint = 'Database connection or query issue. Check Render environment variables (DB_HOST, DB_NAME, DB_USER, DB_PASS) and verify database schema.';
+    } elseif ($statusCode === 404) {
+        $hint = 'Requested endpoint does not exist. Visit /api/health for system status.';
+    } elseif ($statusCode === 405) {
+        $hint = 'HTTP method not allowed for this route.';
+    }
+
+    $payload = [
+        'status' => $statusCode,
+        'success' => false,
+        'message' => $msg ?: 'An unexpected error occurred',
+        'diagnostic' => [
+            'error_type' => get_class($exception),
+            'code' => $exception->getCode(),
+            'file' => basename($exception->getFile()),
+            'line' => $exception->getLine(),
+            'hint' => $hint
+        ],
+        'request' => [
+            'method' => $request->getMethod(),
+            'uri' => (string)$request->getUri()
+        ],
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+
+    $response = $app->getResponseFactory()->createResponse();
+    $response->getBody()->write(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    return $response->withHeader('Content-Type', 'application/json')->withStatus($statusCode);
+};
+
+$errorMiddleware->setDefaultErrorHandler($customErrorHandler);
 $app->run();
