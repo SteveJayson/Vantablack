@@ -400,6 +400,78 @@ class CombatController
                 error_log("Replay save failed: " . $e->getMessage());
             }
             
+            // ============================================
+            // UPDATE ACTIVE EVENT PARTICIPATION POINTS
+            // ============================================
+            $attackerEventPoints = 0;
+            $activeEventsUpdated = [];
+            try {
+                // Check if attacker is participating in any active event
+                $eventStmt = $this->db->prepare("
+                    SELECT ep.id as participation_id, ep.event_id, e.name as event_name, ep.score
+                    FROM event_participation ep
+                    JOIN events e ON ep.event_id = e.id
+                    WHERE ep.combatant_id = ?
+                      AND e.is_active = TRUE
+                      AND NOW() BETWEEN e.start_date AND e.end_date
+                ");
+                $eventStmt->execute([$attackerId]);
+                $activeParticipations = $eventStmt->fetchAll();
+
+                if (!empty($activeParticipations)) {
+                    $basePoints = ($result === 'win') ? 100 : 35;
+                    $damageBonus = (int)round($damageDealt / 20);
+                    $attackerEventPoints = $basePoints + $damageBonus;
+
+                    $updateEventStmt = $this->db->prepare("
+                        UPDATE event_participation
+                        SET score = score + ?, last_action_at = NOW()
+                        WHERE id = ?
+                    ");
+
+                    foreach ($activeParticipations as $ap) {
+                        $updateEventStmt->execute([$attackerEventPoints, $ap['participation_id']]);
+                        $activeEventsUpdated[] = [
+                            'eventId' => (int)$ap['event_id'],
+                            'eventName' => $ap['event_name'],
+                            'pointsAdded' => $attackerEventPoints,
+                            'newScore' => (int)$ap['score'] + $attackerEventPoints
+                        ];
+                    }
+
+                    $log[] = "⭐ +{$attackerEventPoints} Event Points earned for active events!";
+                }
+
+                // Also award defensive event points if defender is participating in active events
+                $defEventStmt = $this->db->prepare("
+                    SELECT ep.id as participation_id, ep.event_id, ep.score
+                    FROM event_participation ep
+                    JOIN events e ON ep.event_id = e.id
+                    WHERE ep.combatant_id = ?
+                      AND e.is_active = TRUE
+                      AND NOW() BETWEEN e.start_date AND e.end_date
+                ");
+                $defEventStmt->execute([$defenderId]);
+                $defActiveParticipations = $defEventStmt->fetchAll();
+
+                if (!empty($defActiveParticipations)) {
+                    $defBase = ($result === 'win') ? 20 : 60;
+                    $defBonus = (int)round($damageTaken / 25);
+                    $defPoints = $defBase + $defBonus;
+
+                    $updateDefStmt = $this->db->prepare("
+                        UPDATE event_participation
+                        SET score = score + ?, last_action_at = NOW()
+                        WHERE id = ?
+                    ");
+                    foreach ($defActiveParticipations as $dap) {
+                        $updateDefStmt->execute([$defPoints, $dap['participation_id']]);
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log("Event score update failed: " . $e->getMessage());
+            }
+
             // Fetch updated attacker credits
             $stmt = $this->db->prepare("SELECT credits FROM combatants WHERE id = ?");
             $stmt->execute([$attackerId]);
@@ -420,6 +492,8 @@ class CombatController
                 'attackerPower' => round($attackerPower),
                 'defenderPower' => round($defenderPower),
                 'attackerNewCredits' => $updatedCredits,
+                'eventPointsEarned' => $attackerEventPoints,
+                'activeEventsUpdated' => $activeEventsUpdated,
                 'foughtAt' => date('Y-m-d H:i:s')
             ]);
             

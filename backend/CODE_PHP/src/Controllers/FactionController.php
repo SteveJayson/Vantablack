@@ -321,6 +321,41 @@ class FactionController
                 $creditsEarned
             ]);
             
+            // ============================================
+            // UPDATE ACTIVE EVENT PARTICIPATION POINTS
+            // ============================================
+            $eventPointsAwarded = 0;
+            try {
+                $eventStmt = $this->db->prepare("
+                    SELECT ep.id as participation_id, ep.event_id, e.name as event_name, ep.score
+                    FROM event_participation ep
+                    JOIN events e ON ep.event_id = e.id
+                    WHERE ep.combatant_id = ?
+                      AND e.is_active = TRUE
+                      AND NOW() BETWEEN e.start_date AND e.end_date
+                ");
+                $eventStmt->execute([$combatantId]);
+                $activeParticipations = $eventStmt->fetchAll();
+
+                if (!empty($activeParticipations)) {
+                    $eventPointsAwarded = ($isVictory) ? 120 : 40;
+
+                    $updateEventStmt = $this->db->prepare("
+                        UPDATE event_participation
+                        SET score = score + ?, last_action_at = NOW()
+                        WHERE id = ?
+                    ");
+
+                    foreach ($activeParticipations as $ap) {
+                        $updateEventStmt->execute([$eventPointsAwarded, $ap['participation_id']]);
+                    }
+
+                    $log[] = "⭐ +{$eventPointsAwarded} Event Points earned for active events!";
+                }
+            } catch (\Exception $e) {
+                error_log("Faction attack event score update failed: " . $e->getMessage());
+            }
+
             // Get updated balance
             $stmt = $this->db->prepare("SELECT credits FROM combatants WHERE id = ?");
             $stmt->execute([$combatantId]);
@@ -328,17 +363,18 @@ class FactionController
             
             $this->db->commit();
             
-           return $this->jsonResponse($response, 200, true, 'Attack resolved', [
-            'result' => $result,
-            'territoryName' => $territory['name'],
-            'attackerPower' => $attackerPower,
-            'defensePower' => $defensePower,
-            'controlChange' => $controlChange,
-            'creditsEarned' => $creditsEarned,
-            'attackerNewCredits' => $newBalance,
-            'newBalance' => $newBalance,
-            'log' => $log
-    ]);
+            return $this->jsonResponse($response, 200, true, 'Attack resolved', [
+                'result' => $result,
+                'territoryName' => $territory['name'],
+                'attackerPower' => $attackerPower,
+                'defensePower' => $defensePower,
+                'controlChange' => $controlChange,
+                'creditsEarned' => $creditsEarned,
+                'eventPointsEarned' => $eventPointsAwarded,
+                'attackerNewCredits' => $newBalance,
+                'newBalance' => $newBalance,
+                'log' => $log
+            ]);
             
         } catch (\Exception $e) {
             $this->db->rollBack();

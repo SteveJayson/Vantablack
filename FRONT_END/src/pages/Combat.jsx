@@ -301,6 +301,17 @@ export default function Combat({ user, onBack, onBattleComplete }) {
                                         {battleResult.creditsEarned > 0 ? '+' : ''}₵{battleResult.creditsEarned}
                                     </span>
                                 </div>
+                                {battleResult.eventPointsEarned > 0 && (
+                                    <div style={styles.rewardItem}>
+                                        <span style={styles.rewardLabel}>Event Points</span>
+                                        <span style={{
+                                            ...styles.rewardValue,
+                                            color: '#00ff88'
+                                        }}>
+                                            +{battleResult.eventPointsEarned} pts
+                                        </span>
+                                    </div>
+                                )}
                                 <div style={styles.rewardItem}>
                                     <span style={styles.rewardLabel}>Damage Dealt</span>
                                     <span style={styles.rewardValue}>{battleResult.damageDealt}</span>
