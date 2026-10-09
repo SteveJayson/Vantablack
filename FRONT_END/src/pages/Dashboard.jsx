@@ -75,6 +75,9 @@ export default function Dashboard({
   const [eventForm, setEventForm] = useState({ ...DEFAULT_EVENT_FORM });
   const [eventLoading, setEventLoading] = useState(false);
   const [eventMessage, setEventMessage] = useState("");
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [showCreditAdjustments, setShowCreditAdjustments] = useState(false);
+  const [showEventCreditTools, setShowEventCreditTools] = useState(true);
 
   const role = user?.role || "hero";
   const canAct = role === "hero" || role === "villain";
@@ -493,6 +496,18 @@ export default function Dashboard({
           </div>
           {showUtilities && (
             <div style={styles.utilityNav}>
+              {role === "admin" && (
+                <button
+                  type="button"
+                  aria-label={showEventCreditTools ? "Hide event and credit tools" : "Show event and credit tools"}
+                  aria-expanded={showEventCreditTools}
+                  title={showEventCreditTools ? "Hide event and credit tools" : "Show event and credit tools"}
+                  onClick={() => setShowEventCreditTools((open) => !open)}
+                  style={{ width: "32px", height: "32px", padding: 0, background: "transparent", border: "none", color: "#9ca3af", fontSize: "0.75rem", opacity: 0.2, cursor: "pointer" }}
+                >
+                  .
+                </button>
+              )}
               <button
                 onClick={() => setShowChat(!showChat)}
                 style={{
@@ -1038,8 +1053,24 @@ export default function Dashboard({
                       Generate 3 Villains
                     </button>
                   </div>
+                  {showEventCreditTools && (
+                    <div>
                   <div style={{ marginTop: "30px" }}>
-                    <h3 style={styles.sectionTitle}>CREATE EVENT</h3>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: showCreateEvent ? "14px" : 0 }}>
+                      <h3 style={{ ...styles.sectionTitle, margin: 0 }}>CREATE EVENT</h3>
+                      <button
+                        type="button"
+                        aria-label={showCreateEvent ? "Collapse create event" : "Expand create event"}
+                        aria-expanded={showCreateEvent}
+                        title={showCreateEvent ? "Collapse create event" : "Expand create event"}
+                        onClick={() => setShowCreateEvent((open) => !open)}
+                        style={{ width: "32px", height: "32px", padding: 0, background: "#f3f4f6", border: "1px solid #9ca3af", borderRadius: "4px", color: "#111827", fontSize: "1.2rem", cursor: "pointer", transform: showCreateEvent ? "rotate(90deg)" : "none", transition: "transform 150ms ease" }}
+                      >
+                        &gt;
+                      </button>
+                    </div>
+                    {showCreateEvent && (
+                      <div>
                     {eventMessage && (
                       <div style={{ padding: "10px", marginBottom: "12px", background: "#f3f4f6", border: "1px solid #d1d5db", borderRadius: "4px", color: "#111827", fontSize: "0.8rem" }}>
                         {eventMessage}
@@ -1115,12 +1146,26 @@ export default function Dashboard({
                     >
                       {eventLoading ? "CREATING..." : "CREATE EVENT"}
                     </button>
+                      </div>
+                    )}
                   </div>
                   {/* GRANT CREDITS TO USER */}
                   <div style={{ marginTop: "30px" }}>
-                    <h3 style={styles.sectionTitle}>
-                     ADJUST USER CREDITS
-                    </h3>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: showCreditAdjustments ? "14px" : 0 }}>
+                      <h3 style={{ ...styles.sectionTitle, margin: 0 }}>ADJUST USER CREDITS</h3>
+                      <button
+                        type="button"
+                        aria-label={showCreditAdjustments ? "Collapse adjust user credits" : "Expand adjust user credits"}
+                        aria-expanded={showCreditAdjustments}
+                        title={showCreditAdjustments ? "Collapse adjust user credits" : "Expand adjust user credits"}
+                        onClick={() => setShowCreditAdjustments((open) => !open)}
+                        style={{ width: "32px", height: "32px", padding: 0, background: "#f3f4f6", border: "1px solid #9ca3af", borderRadius: "4px", color: "#111827", fontSize: "1.2rem", cursor: "pointer", transform: showCreditAdjustments ? "rotate(90deg)" : "none", transition: "transform 150ms ease" }}
+                      >
+                        &gt;
+                      </button>
+                    </div>
+                    {showCreditAdjustments && (
+                      <div>
 
                     {grantMessage && (
                       <div
@@ -1277,7 +1322,6 @@ export default function Dashboard({
                         {grantLoading ? "PROCESSING..." : "REMOVE CREDITS"}
                       </button>
                     </div>
-                  </div>
 
                   {/* GRANT HISTORY */}
                   {grantHistory.length > 0 && (
@@ -1315,6 +1359,11 @@ export default function Dashboard({
                           ))}
                         </tbody>
                       </table>
+                    </div>
+                  )}
+                      </div>
+                    )}
+                  </div>
                     </div>
                   )}
 
