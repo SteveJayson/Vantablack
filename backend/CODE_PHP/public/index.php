@@ -208,6 +208,7 @@ $app->delete('/api/chat/message/{id}', \Aegis\Controllers\ChatController::class 
 // ============================================
 $app->get('/api/events', \Aegis\Controllers\EventController::class . ':getEvents');
 $app->get('/api/events/active-count', \Aegis\Controllers\EventController::class . ':getActiveCount');
+$app->post('/api/events/create', \Aegis\Controllers\EventController::class . ':createEvent');
 $app->get('/api/events/{id}', \Aegis\Controllers\EventController::class . ':getEvent');
 $app->post('/api/events/join', \Aegis\Controllers\EventController::class . ':joinEvent');
 $app->post('/api/events/score', \Aegis\Controllers\EventController::class . ':addScore');

@@ -7,6 +7,42 @@ import NotificationBell from "../components/NotificationBell";
 import AdminCharts from "../components/AdminCharts";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const DEFAULT_EVENT_FORM = {
+  name: "",
+  description: "",
+  eventType: "special",
+  icon: "🎉",
+  startDate: "",
+  endDate: "",
+  entryFee: "0",
+  maxParticipants: "0",
+  minRole: "any",
+  firstPlaceCredits: "10000",
+  secondPlaceCredits: "5000",
+  thirdPlaceCredits: "2500",
+  top10Credits: "500",
+  participationCredits: "0",
+};
+
+const eventInputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "9px 10px",
+  background: "#ffffff",
+  border: "1px solid #9ca3af",
+  borderRadius: "4px",
+  color: "#111827",
+  font: "inherit",
+  fontSize: "0.8rem",
+};
+
+const eventLabelStyle = {
+  display: "grid",
+  gap: "6px",
+  color: "#4b5563",
+  fontSize: "0.68rem",
+  fontWeight: 700,
+};
 
 export default function Dashboard({
   user: initialUser,
@@ -36,6 +72,9 @@ export default function Dashboard({
   const [grantLoading, setGrantLoading] = useState(false);
   const [grantMessage, setGrantMessage] = useState("");
   const [grantHistory, setGrantHistory] = useState([]);
+  const [eventForm, setEventForm] = useState({ ...DEFAULT_EVENT_FORM });
+  const [eventLoading, setEventLoading] = useState(false);
+  const [eventMessage, setEventMessage] = useState("");
 
   const role = user?.role || "hero";
   const canAct = role === "hero" || role === "villain";
@@ -182,6 +221,77 @@ export default function Dashboard({
       console.error("Failed to load grant history:", err);
     }
   };
+
+  const createAdminEvent = async () => {
+    const startDate = new Date(eventForm.startDate);
+    const endDate = new Date(eventForm.endDate);
+    const entryFee = Number(eventForm.entryFee);
+    const maxParticipants = Number(eventForm.maxParticipants);
+
+    if (!eventForm.name.trim() || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+      setEventMessage("Enter an event name and a valid schedule");
+      return;
+    }
+    if (!Number.isSafeInteger(entryFee) || entryFee < 0 || !Number.isSafeInteger(maxParticipants) || maxParticipants < 0) {
+      setEventMessage("Entry fee and participant limit must be non-negative whole numbers");
+      return;
+    }
+
+    const rewardFields = {
+      "1st": "firstPlaceCredits",
+      "2nd": "secondPlaceCredits",
+      "3rd": "thirdPlaceCredits",
+      top10: "top10Credits",
+      participation: "participationCredits",
+    };
+    const rewardPool = {};
+    for (const [place, field] of Object.entries(rewardFields)) {
+      const credits = Number(eventForm[field]);
+      if (!Number.isSafeInteger(credits) || credits < 0) {
+        setEventMessage("Reward credits must be non-negative whole numbers");
+        return;
+      }
+      if (credits > 0) rewardPool[place] = { credits };
+    }
+    if (Object.keys(rewardPool).length === 0) {
+      setEventMessage("Add at least one credit reward");
+      return;
+    }
+
+    setEventLoading(true);
+    setEventMessage("");
+    try {
+      const res = await fetch(`${API}/events/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminId: user.id,
+          name: eventForm.name.trim(),
+          description: eventForm.description.trim(),
+          eventType: eventForm.eventType,
+          icon: eventForm.icon.trim() || "🎉",
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          entryFee,
+          maxParticipants,
+          minRole: eventForm.minRole,
+          rewardPool,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setEventMessage(data.message || "Could not create event");
+        return;
+      }
+      setEventMessage(`Created: ${data.data.name}`);
+      setEventForm({ ...DEFAULT_EVENT_FORM });
+    } catch (error) {
+      setEventMessage(`Error: ${error.message}`);
+    } finally {
+      setEventLoading(false);
+    }
+  };
+
   const loadData = async () => {
     if (role === "admin") {
       loadAdminDashboard();
@@ -926,6 +1036,84 @@ export default function Dashboard({
                       }}
                     >
                       Generate 3 Villains
+                    </button>
+                  </div>
+                  <div style={{ marginTop: "30px" }}>
+                    <h3 style={styles.sectionTitle}>CREATE EVENT</h3>
+                    {eventMessage && (
+                      <div style={{ padding: "10px", marginBottom: "12px", background: "#f3f4f6", border: "1px solid #d1d5db", borderRadius: "4px", color: "#111827", fontSize: "0.8rem" }}>
+                        {eventMessage}
+                      </div>
+                    )}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px", marginBottom: "12px" }}>
+                      <label style={eventLabelStyle}>
+                        EVENT NAME
+                        <input value={eventForm.name} maxLength={150} onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })} style={eventInputStyle} />
+                      </label>
+                      <label style={eventLabelStyle}>
+                        EVENT TYPE
+                        <select value={eventForm.eventType} onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value })} style={eventInputStyle}>
+                          <option value="special">Special</option>
+                          <option value="tournament">Tournament</option>
+                          <option value="holiday">Holiday</option>
+                          <option value="weekly">Weekly</option>
+                        </select>
+                      </label>
+                      <label style={eventLabelStyle}>
+                        ICON
+                        <input value={eventForm.icon} maxLength={10} onChange={(e) => setEventForm({ ...eventForm, icon: e.target.value })} style={eventInputStyle} />
+                      </label>
+                      <label style={eventLabelStyle}>
+                        STARTS
+                        <input type="datetime-local" value={eventForm.startDate} onChange={(e) => setEventForm({ ...eventForm, startDate: e.target.value })} style={eventInputStyle} />
+                      </label>
+                      <label style={eventLabelStyle}>
+                        ENDS
+                        <input type="datetime-local" value={eventForm.endDate} onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })} style={eventInputStyle} />
+                      </label>
+                      <label style={eventLabelStyle}>
+                        ENTRY FEE
+                        <input type="number" min="0" step="1" value={eventForm.entryFee} onChange={(e) => setEventForm({ ...eventForm, entryFee: e.target.value })} style={eventInputStyle} />
+                      </label>
+                      <label style={eventLabelStyle}>
+                        MAX PARTICIPANTS (0 = UNLIMITED)
+                        <input type="number" min="0" step="1" value={eventForm.maxParticipants} onChange={(e) => setEventForm({ ...eventForm, maxParticipants: e.target.value })} style={eventInputStyle} />
+                      </label>
+                      <label style={eventLabelStyle}>
+                        MINIMUM ROLE
+                        <select value={eventForm.minRole} onChange={(e) => setEventForm({ ...eventForm, minRole: e.target.value })} style={eventInputStyle}>
+                          <option value="any">Any</option>
+                          <option value="civilian">Civilian</option>
+                          <option value="hero">Hero</option>
+                          <option value="villain">Villain</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label style={{ ...eventLabelStyle, marginBottom: "12px" }}>
+                      DESCRIPTION
+                      <textarea value={eventForm.description} rows={3} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} style={{ ...eventInputStyle, resize: "vertical" }} />
+                    </label>
+                    <h4 style={{ ...styles.sectionTitle, marginTop: "18px" }}>CREDIT REWARDS</h4>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "12px", marginBottom: "14px" }}>
+                      {[
+                        ["1ST PLACE", "firstPlaceCredits"],
+                        ["2ND PLACE", "secondPlaceCredits"],
+                        ["3RD PLACE", "thirdPlaceCredits"],
+                        ["TOP 10", "top10Credits"],
+                        ["PARTICIPATION", "participationCredits"],
+                      ].map(([label, field]) => (
+                        <label key={field} style={eventLabelStyle}>
+                          {label}
+                          <input type="number" min="0" step="1" value={eventForm[field]} onChange={(e) => setEventForm({ ...eventForm, [field]: e.target.value })} style={eventInputStyle} />
+                        </label>
+                      ))}
+                    </div>
+                    <button
+                      onClick={createAdminEvent}
+                      disabled={eventLoading}
+                      style={{ padding: "11px 16px", background: "#e5e7eb", border: "1px solid #9ca3af", borderRadius: "4px", color: "#111827", fontWeight: 700, cursor: eventLoading ? "not-allowed" : "pointer", opacity: eventLoading ? 0.6 : 1 }}
+                    >
+                      {eventLoading ? "CREATING..." : "CREATE EVENT"}
                     </button>
                   </div>
                   {/* GRANT CREDITS TO USER */}

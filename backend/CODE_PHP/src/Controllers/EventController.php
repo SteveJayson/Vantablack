@@ -19,6 +19,115 @@ class EventController
         $params = $request->getQueryParams();
         return $params[$key] ?? $default;
     }
+
+    /**
+     * POST /api/events/create
+     */
+    public function createEvent($request, $response, $args)
+    {
+        try {
+            $body = json_decode($request->getBody()->getContents(), true);
+            if (!is_array($body)) {
+                return $this->jsonResponse($response, 400, false, 'Valid event data required');
+            }
+
+            $adminId = (int)($body['adminId'] ?? 0);
+            $adminStmt = $this->db->prepare("SELECT id FROM combatants WHERE id = ? AND role = 'admin'");
+            $adminStmt->execute([$adminId]);
+            if (!$adminId || !$adminStmt->fetch()) {
+                return $this->jsonResponse($response, 403, false, 'Admin access required');
+            }
+
+            $nameInput = $body['name'] ?? '';
+            $descriptionInput = $body['description'] ?? '';
+            $iconInput = $body['icon'] ?? '🎉';
+            if (!is_string($nameInput) || !is_string($descriptionInput) || !is_string($iconInput)) {
+                return $this->jsonResponse($response, 400, false, 'Event name, description, and icon must be text');
+            }
+
+            $name = trim($nameInput);
+            $description = trim($descriptionInput);
+            $eventType = $body['eventType'] ?? 'special';
+            $icon = trim($iconInput);
+            $minRole = $body['minRole'] ?? 'any';
+            $entryFee = filter_var($body['entryFee'] ?? 0, FILTER_VALIDATE_INT);
+            $maxParticipants = filter_var($body['maxParticipants'] ?? 0, FILTER_VALIDATE_INT);
+
+            if ($name === '' || strlen($name) > 600 || !in_array($eventType, ['holiday', 'tournament', 'special', 'weekly'], true)) {
+                return $this->jsonResponse($response, 400, false, 'Event name and a valid event type are required');
+            }
+            if (!in_array($minRole, ['civilian', 'hero', 'villain', 'admin', 'any'], true)
+                || $entryFee === false || $entryFee < 0
+                || $maxParticipants === false || $maxParticipants < 0) {
+                return $this->jsonResponse($response, 400, false, 'Invalid role, entry fee, or participant limit');
+            }
+
+            $startInput = $body['startDate'] ?? null;
+            $endInput = $body['endDate'] ?? null;
+            if (!is_string($startInput) || trim($startInput) === '' || !is_string($endInput) || trim($endInput) === '') {
+                return $this->jsonResponse($response, 400, false, 'Valid start and end dates are required');
+            }
+            try {
+                $startDate = new \DateTimeImmutable($startInput);
+                $endDate = new \DateTimeImmutable($endInput);
+            } catch (\Exception $e) {
+                return $this->jsonResponse($response, 400, false, 'Valid start and end dates are required');
+            }
+            if ($endDate <= $startDate) {
+                return $this->jsonResponse($response, 400, false, 'Event end date must be after the start date');
+            }
+
+            $requestedRewards = $body['rewardPool'] ?? [];
+            if (!is_array($requestedRewards)) {
+                return $this->jsonResponse($response, 400, false, 'Reward pool must be an object');
+            }
+            $rewardPool = [];
+            foreach (['1st', '2nd', '3rd', 'top5', 'top10', 'participation'] as $place) {
+                if (!isset($requestedRewards[$place])) {
+                    continue;
+                }
+                if (!is_array($requestedRewards[$place])) {
+                    return $this->jsonResponse($response, 400, false, 'Each reward must contain a credits object');
+                }
+                $credits = filter_var($requestedRewards[$place]['credits'] ?? null, FILTER_VALIDATE_INT);
+                if ($credits === false || $credits < 0 || $credits > 2147483647) {
+                    return $this->jsonResponse($response, 400, false, 'Reward credits must be a valid non-negative whole number');
+                }
+                if ($credits > 0) {
+                    $rewardPool[$place] = ['credits' => $credits];
+                }
+            }
+            if (!$rewardPool) {
+                return $this->jsonResponse($response, 400, false, 'Add at least one credit reward');
+            }
+
+            $this->db->exec("SET time_zone = '+00:00'");
+            $stmt = $this->db->prepare("
+                INSERT INTO events
+                    (name, description, event_type, icon, start_date, end_date, reward_pool, entry_fee, max_participants, min_role, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+            ");
+            $stmt->execute([
+                $name,
+                $description,
+                $eventType,
+                $icon !== '' ? $icon : '🎉',
+                $startDate->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
+                $endDate->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
+                json_encode($rewardPool),
+                $entryFee,
+                $maxParticipants,
+                $minRole
+            ]);
+
+            return $this->jsonResponse($response, 201, true, 'Event created', [
+                'eventId' => (int)$this->db->lastInsertId(),
+                'name' => $name
+            ]);
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, 500, false, 'Server error: ' . $e->getMessage());
+        }
+    }
     
     /**
      * GET /api/events
@@ -36,8 +145,8 @@ class EventController
                     e.description,
                     e.event_type as eventType,
                     e.icon,
-                    e.start_date as startDate,
-                    e.end_date as endDate,
+                    UNIX_TIMESTAMP(e.start_date) as startDateEpoch,
+                    UNIX_TIMESTAMP(e.end_date) as endDateEpoch,
                     e.reward_pool as rewardPool,
                     e.entry_fee as entryFee,
                     e.max_participants as maxParticipants,
@@ -82,6 +191,9 @@ class EventController
                 $event['participantCount'] = (int)$event['participantCount'];
                 $event['isActive'] = (bool)$event['isActive'];
                 $event['rewardPool'] = json_decode($event['rewardPool'], true);
+                $event['startDate'] = gmdate('Y-m-d\\TH:i:s\\Z', (int)$event['startDateEpoch']);
+                $event['endDate'] = gmdate('Y-m-d\\TH:i:s\\Z', (int)$event['endDateEpoch']);
+                unset($event['startDateEpoch'], $event['endDateEpoch']);
                 
                 $event['myParticipation'] = null;
                 if ($combatantId > 0) {
@@ -130,8 +242,8 @@ class EventController
                 SELECT 
                     e.*,
                     e.event_type as eventType,
-                    e.start_date as startDate,
-                    e.end_date as endDate,
+                    UNIX_TIMESTAMP(e.start_date) as startDateEpoch,
+                    UNIX_TIMESTAMP(e.end_date) as endDateEpoch,
                     e.reward_pool as rewardPool,
                     e.entry_fee as entryFee,
                     e.max_participants as maxParticipants,
@@ -159,6 +271,9 @@ class EventController
             $event['participantCount'] = (int)$event['participantCount'];
             $event['isActive'] = (bool)$event['isActive'];
             $event['rewardPool'] = json_decode($event['rewardPool'], true);
+            $event['startDate'] = gmdate('Y-m-d\\TH:i:s\\Z', (int)$event['startDateEpoch']);
+            $event['endDate'] = gmdate('Y-m-d\\TH:i:s\\Z', (int)$event['endDateEpoch']);
+            unset($event['startDateEpoch'], $event['endDateEpoch']);
             
             // Leaderboard
             $stmt = $this->db->prepare("
